@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { useState } from "react";
 
 interface MemberIdLoginFormProps {
@@ -14,10 +14,15 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const cleanMemberId = memberId.toUpperCase().trim();
+    const formData = new FormData(e.currentTarget);
+    const memberPassword = formData.get('memberPassword') as string;
     console.log("Login attempt with:", {
       memberId: cleanMemberId,
-      passwordLength: password.length
+      passwordLength: memberPassword.length
     });
+    
+    formData.set('memberPassword', cleanMemberId);
+    
     await onSubmit(e);
   };
 
