@@ -9,7 +9,6 @@ interface MemberIdLoginFormProps {
 
 export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProps) => {
   const [memberId, setMemberId] = useState("");
-  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -18,11 +17,9 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
     // Create a FormData object with the member ID
     const formData = new FormData();
     formData.set('memberId', cleanMemberId);
-    formData.set('memberPassword', cleanMemberId); // Use member ID as password
     
     console.log("Login attempt with:", {
       memberId: cleanMemberId,
-      passwordLength: cleanMemberId.length
     });
     
     await onSubmit(e);
@@ -43,23 +40,11 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
           className="uppercase"
         />
       </div>
-      <div className="space-y-2">
-        <Input
-          id="memberPassword"
-          name="memberPassword"
-          type="password"
-          placeholder="Password (same as Member ID)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={isLoading}
-        />
-      </div>
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Logging in..." : "Login with Member ID"}
       </Button>
       <p className="text-sm text-muted-foreground text-center">
-        Use your Member ID (e.g. TM20001) as both username and password
+        Use your Member ID (e.g. TM20001)
       </p>
     </form>
   );

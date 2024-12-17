@@ -62,7 +62,7 @@ export default function Login() {
       // Use the member's email and member_number for authentication
       const { error } = await supabase.auth.signInWithPassword({
         email: member.email,
-        password: member.member_number, // Use member_number as password instead of memberId
+        password: member.member_number, // Use member_number as password
       });
 
       if (error) throw error;
