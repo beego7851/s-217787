@@ -54,15 +54,15 @@ export default function Login() {
       console.log("Looking up member with ID:", memberId);
       const member = await getMemberByMemberId(memberId);
 
-      if (!member || !member.email) {
+      if (!member || !member.email || !member.default_password_hash) {
         console.log("Member lookup result:", member);
         throw new Error("Member ID not found or no email associated");
       }
 
-      // Use the member's email and member_number for authentication
+      // Use the member's email and default_password_hash for authentication
       const { error } = await supabase.auth.signInWithPassword({
         email: member.email,
-        password: member.member_number, // Use member_number as password
+        password: member.default_password_hash,
       });
 
       if (error) throw error;
