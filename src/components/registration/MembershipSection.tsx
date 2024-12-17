@@ -20,51 +20,66 @@ export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps)
   useEffect(() => {
     const fetchCollectors = async () => {
       console.log("Fetching collectors...");
-      const { data, error } = await supabase
-        .from('collectors')
-        .select('id, name')
-        .eq('active', true)
-        .order('name');
+      try {
+        const { data: collectorsData, error: collectorsError } = await supabase
+          .from('collectors')
+          .select('id, name')
+          .eq('active', true)
+          .order('name');
 
-      if (error) {
-        console.error("Error fetching collectors:", error);
-        return;
-      }
-
-      console.log("Fetched collectors:", data);
-      if (data && data.length > 0) {
-        setCollectors(data);
-        
-        // If we have a member ID, fetch their collector
-        if (memberId) {
-          const { data: memberData } = await supabase
-            .from('members')
-            .select('collector_id, collector')
-            .eq('member_number', memberId)
-            .single();
-
-          if (memberData?.collector_id) {
-            console.log("Setting collector from member data:", memberData.collector_id);
-            setSelectedCollector(memberData.collector_id);
-            setAssignedCollectorName(memberData.collector || '');
-            onCollectorChange?.(memberData.collector_id);
-          } else {
-            // Fall back to default collector if no specific collector found
-            setSelectedCollector(data[0].id);
-            onCollectorChange?.(data[0].id);
-          }
-        } else if (!selectedCollector) {
-          // Only set default collector if none is selected
-          setSelectedCollector(data[0].id);
-          onCollectorChange?.(data[0].id);
+        if (collectorsError) {
+          console.error("Error fetching collectors:", collectorsError);
+          return;
         }
-      } else {
-        console.warn("No active collectors found in the database");
+
+        console.log("Fetched collectors:", collectorsData);
+        
+        if (collectorsData && collectorsData.length > 0) {
+          setCollectors(collectorsData);
+          
+          // If we have a member ID, fetch their collector
+          if (memberId) {
+            console.log("Fetching member data for ID:", memberId);
+            const { data: memberData, error: memberError } = await supabase
+              .from('members')
+              .select('collector_id, collector')
+              .eq('member_number', memberId)
+              .single();
+
+            if (memberError) {
+              console.error("Error fetching member data:", memberError);
+              return;
+            }
+
+            console.log("Fetched member data:", memberData);
+
+            if (memberData?.collector_id) {
+              console.log("Setting collector from member data:", memberData.collector_id);
+              setSelectedCollector(memberData.collector_id);
+              setAssignedCollectorName(memberData.collector || '');
+              onCollectorChange?.(memberData.collector_id);
+            } else {
+              // Fall back to default collector if no specific collector found
+              console.log("No collector found for member, using default");
+              setSelectedCollector(collectorsData[0].id);
+              onCollectorChange?.(collectorsData[0].id);
+            }
+          } else if (!selectedCollector) {
+            // Only set default collector if none is selected
+            console.log("Setting default collector:", collectorsData[0].id);
+            setSelectedCollector(collectorsData[0].id);
+            onCollectorChange?.(collectorsData[0].id);
+          }
+        } else {
+          console.warn("No active collectors found in the database");
+        }
+      } catch (error) {
+        console.error("Unexpected error during collector fetch:", error);
       }
     };
 
     fetchCollectors();
-  }, [memberId]); // Added memberId to dependency array
+  }, [memberId]); 
 
   const handleCollectorChange = (value: string) => {
     console.log("Selected collector:", value);
