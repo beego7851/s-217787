@@ -3,6 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
+import { useLocation } from "react-router-dom";
 
 interface MembershipSectionProps {
   onCollectorChange?: (collectorId: string) => void;
@@ -11,6 +12,9 @@ interface MembershipSectionProps {
 export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps) => {
   const [collectors, setCollectors] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCollector, setSelectedCollector] = useState<string>("");
+  const location = useLocation();
+  const prefilledData = location.state?.prefilledData;
+  const memberId = location.state?.memberId;
 
   useEffect(() => {
     const fetchCollectors = async () => {
@@ -29,8 +33,26 @@ export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps)
       console.log("Fetched collectors:", data);
       if (data && data.length > 0) {
         setCollectors(data);
-        // Only set default collector if none is selected
-        if (!selectedCollector) {
+        
+        // If we have a member ID, fetch their collector
+        if (memberId) {
+          const { data: memberData } = await supabase
+            .from('members')
+            .select('collector_id')
+            .eq('member_number', memberId)
+            .single();
+
+          if (memberData?.collector_id) {
+            console.log("Setting collector from member data:", memberData.collector_id);
+            setSelectedCollector(memberData.collector_id);
+            onCollectorChange?.(memberData.collector_id);
+          } else {
+            // Fall back to default collector if no specific collector found
+            setSelectedCollector(data[0].id);
+            onCollectorChange?.(data[0].id);
+          }
+        } else if (!selectedCollector) {
+          // Only set default collector if none is selected
           setSelectedCollector(data[0].id);
           onCollectorChange?.(data[0].id);
         }
@@ -40,7 +62,7 @@ export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps)
     };
 
     fetchCollectors();
-  }, []); // Empty dependency array since we only want to fetch once
+  }, [memberId]); // Added memberId to dependency array
 
   const handleCollectorChange = (value: string) => {
     console.log("Selected collector:", value);
@@ -55,7 +77,11 @@ export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps)
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="collector">Select Collector</Label>
-          <Select value={selectedCollector} onValueChange={handleCollectorChange}>
+          <Select 
+            value={selectedCollector} 
+            onValueChange={handleCollectorChange}
+            disabled={!!memberId} // Disable if member ID exists
+          >
             <SelectTrigger id="collector" className="w-full">
               <SelectValue placeholder="Select a collector" />
             </SelectTrigger>
