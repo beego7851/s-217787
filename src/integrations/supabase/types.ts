@@ -51,6 +51,33 @@ export type Database = {
           },
         ]
       }
+      codebase_backups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          download_count: number | null
+          filename: string
+          id: string
+          size: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          download_count?: number | null
+          filename: string
+          id?: string
+          size?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          download_count?: number | null
+          filename?: string
+          id?: string
+          size?: number | null
+        }
+        Relationships: []
+      }
       collectors: {
         Row: {
           active: boolean | null
