@@ -60,9 +60,14 @@ export default function Login() {
         throw new Error("Member ID not found or no email associated");
       }
 
+      // Generate a valid temporary email if using the temp domain
+      const email = member.email.endsWith('@temp.pwaburton.org') 
+        ? `member.${member.member_number}@temporary.org`
+        : member.email;
+
       // First, try to create the user if they don't exist
       const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-        email: member.email,
+        email,
         password: member.member_number,
       });
 
@@ -73,12 +78,12 @@ export default function Login() {
 
       // Now attempt to sign in
       console.log("Attempting login with member:", { 
-        email: member.email,
+        email,
         memberId: member.member_number 
       });
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: member.email,
+        email,
         password: member.member_number,
       });
 
