@@ -14,14 +14,16 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const cleanMemberId = memberId.toUpperCase().trim();
-    const formData = new FormData(e.currentTarget);
-    const memberPassword = formData.get('memberPassword') as string;
+    
+    // Create a FormData object with the member ID
+    const formData = new FormData();
+    formData.set('memberId', cleanMemberId);
+    formData.set('memberPassword', cleanMemberId); // Use member ID as password
+    
     console.log("Login attempt with:", {
       memberId: cleanMemberId,
-      passwordLength: memberPassword.length
+      passwordLength: cleanMemberId.length
     });
-    
-    formData.set('memberPassword', cleanMemberId);
     
     await onSubmit(e);
   };

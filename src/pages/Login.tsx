@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { LoginTabs } from "../components/auth/LoginTabs";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../hooks/use-toast";
-import { getMemberByMemberId, verifyMemberPassword } from "../utils/memberAuth";
+import { getMemberByMemberId } from "../utils/memberAuth";
 import { supabase } from "../integrations/supabase/client";
 
 export default function Login() {
@@ -45,7 +45,6 @@ export default function Login() {
     
     const formData = new FormData(e.currentTarget);
     const memberId = formData.get('memberId') as string;
-    const password = formData.get('memberPassword') as string;
     
     try {
       console.log("Looking up member with ID:", memberId);
@@ -56,17 +55,18 @@ export default function Login() {
         throw new Error("Member ID not found or no email associated");
       }
 
-      const isPasswordValid = await verifyMemberPassword(memberId, password);
-      if (!isPasswordValid) {
-        throw new Error("Invalid member ID or password");
-      }
-
+      // Use the member's email and member_number for authentication
       const { error } = await supabase.auth.signInWithPassword({
         email: member.email,
-        password: member.member_number,
+        password: memberId, // Use member ID as password
       });
 
       if (error) throw error;
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
     } catch (error) {
       console.error("Member ID login error:", error);
       toast({
