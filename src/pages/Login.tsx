@@ -5,11 +5,14 @@ import { useToast } from "../hooks/use-toast";
 import { getMemberByMemberId } from "../utils/memberAuth";
 import { supabase } from "../integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,6 +50,7 @@ export default function Login() {
   const handleMemberIdSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setShowEmailConfirmation(false);
     
     const formData = new FormData(e.currentTarget);
     const memberId = formData.get('memberId') as string;
@@ -88,6 +92,10 @@ export default function Login() {
       });
 
       if (signInError) {
+        if (signInError.message === "Email not confirmed") {
+          setShowEmailConfirmation(true);
+          throw new Error("Please check your email for confirmation link");
+        }
         console.error("Auth error:", signInError);
         throw signInError;
       }
@@ -115,6 +123,15 @@ export default function Login() {
           <CardTitle className="text-2xl text-center">Login</CardTitle>
         </CardHeader>
         <CardContent>
+          {showEmailConfirmation && (
+            <Alert className="mb-6">
+              <InfoIcon className="h-4 w-4" />
+              <AlertDescription>
+                Please check your email for a confirmation link before logging in.
+                You may need to check your spam folder.
+              </AlertDescription>
+            </Alert>
+          )}
           <LoginTabs 
             onEmailSubmit={handleEmailSubmit}
             onMemberIdSubmit={handleMemberIdSubmit}
