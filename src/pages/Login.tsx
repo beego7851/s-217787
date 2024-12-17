@@ -20,6 +20,7 @@ export default function Login() {
     const password = formData.get('password') as string;
 
     try {
+      console.log("Attempting email login with:", { email });
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -53,20 +54,29 @@ export default function Login() {
     try {
       console.log("Looking up member with ID:", memberId);
       const member = await getMemberByMemberId(memberId);
+      console.log("Member lookup result:", member);
 
-      if (!member || !member.email || !member.default_password_hash) {
-        console.log("Member lookup result:", member);
+      if (!member || !member.email) {
         throw new Error("Member ID not found or no email associated");
       }
 
-      // Use the member's email and default_password_hash for authentication
-      const { error } = await supabase.auth.signInWithPassword({
+      // Use the member's email and member_number for authentication
+      // The member_number is used as password since that's what gets hashed
+      console.log("Attempting login with member:", { 
         email: member.email,
-        password: member.default_password_hash,
+        memberId: member.member_number 
       });
 
-      if (error) throw error;
-      
+      const { error } = await supabase.auth.signInWithPassword({
+        email: member.email,
+        password: member.member_number, // Use member_number as the password
+      });
+
+      if (error) {
+        console.error("Auth error:", error);
+        throw error;
+      }
+
       toast({
         title: "Login successful",
         description: "Welcome back!",
