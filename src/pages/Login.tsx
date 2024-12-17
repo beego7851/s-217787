@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../hooks/use-toast";
 import { getMemberByMemberId } from "../utils/memberAuth";
 import { supabase } from "../integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Login() {
   const navigate = useNavigate();
