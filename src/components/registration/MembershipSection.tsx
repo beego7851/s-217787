@@ -12,6 +12,7 @@ interface MembershipSectionProps {
 export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps) => {
   const [collectors, setCollectors] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCollector, setSelectedCollector] = useState<string>("");
+  const [assignedCollectorName, setAssignedCollectorName] = useState<string>("");
   const location = useLocation();
   const prefilledData = location.state?.prefilledData;
   const memberId = location.state?.memberId;
@@ -38,13 +39,14 @@ export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps)
         if (memberId) {
           const { data: memberData } = await supabase
             .from('members')
-            .select('collector_id')
+            .select('collector_id, collector')
             .eq('member_number', memberId)
             .single();
 
           if (memberData?.collector_id) {
             console.log("Setting collector from member data:", memberData.collector_id);
             setSelectedCollector(memberData.collector_id);
+            setAssignedCollectorName(memberData.collector || '');
             onCollectorChange?.(memberData.collector_id);
           } else {
             // Fall back to default collector if no specific collector found
@@ -77,28 +79,34 @@ export const MembershipSection = ({ onCollectorChange }: MembershipSectionProps)
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="collector">Select Collector</Label>
-          <Select 
-            value={selectedCollector} 
-            onValueChange={handleCollectorChange}
-            disabled={!!memberId} // Disable if member ID exists
-          >
-            <SelectTrigger id="collector" className="w-full">
-              <SelectValue placeholder="Select a collector" />
-            </SelectTrigger>
-            <SelectContent>
-              {collectors.length === 0 ? (
-                <SelectItem value="no-collectors" disabled>
-                  No active collectors available
-                </SelectItem>
-              ) : (
-                collectors.map((collector) => (
-                  <SelectItem key={collector.id} value={collector.id}>
-                    {collector.name}
+          {memberId && assignedCollectorName ? (
+            <div className="p-2 bg-muted rounded-md">
+              <p className="text-sm">Currently assigned to: <span className="font-medium">{assignedCollectorName}</span></p>
+            </div>
+          ) : (
+            <Select 
+              value={selectedCollector} 
+              onValueChange={handleCollectorChange}
+              disabled={!!memberId}
+            >
+              <SelectTrigger id="collector" className="w-full">
+                <SelectValue placeholder="Select a collector" />
+              </SelectTrigger>
+              <SelectContent>
+                {collectors.length === 0 ? (
+                  <SelectItem value="no-collectors" disabled>
+                    No active collectors available
                   </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+                ) : (
+                  collectors.map((collector) => (
+                    <SelectItem key={collector.id} value={collector.id}>
+                      {collector.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="space-y-2">
