@@ -60,8 +60,29 @@ export default function Login() {
       const member = await getMemberByMemberId(memberId);
       console.log("Member lookup result:", member);
 
-      if (!member || !member.email) {
-        throw new Error("Member ID not found or no email associated");
+      if (!member) {
+        throw new Error("Member ID not found");
+      }
+
+      // Check if member has completed registration
+      if (!member.email || member.email.includes('@temp.pwaburton.org') || member.email.includes('@temporary.org')) {
+        // Redirect to registration with member ID
+        navigate('/register', { 
+          state: { 
+            memberId: member.member_number,
+            prefilledData: {
+              fullName: member.full_name,
+              address: member.address,
+              town: member.town,
+              postCode: member.postcode,
+              phone: member.phone,
+              dateOfBirth: member.date_of_birth,
+              gender: member.gender,
+              maritalStatus: member.marital_status
+            }
+          }
+        });
+        return;
       }
 
       // Generate a valid temporary email if using the temp domain
