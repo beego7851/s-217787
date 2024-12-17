@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { LoginTabs } from "../components/auth/LoginTabs";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../hooks/use-toast";
@@ -26,6 +25,11 @@ export default function Login() {
       });
 
       if (error) throw error;
+
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
     } catch (error) {
       console.error("Email login error:", error);
       toast({
@@ -40,7 +44,6 @@ export default function Login() {
 
   const handleMemberIdSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Member ID login attempt started");
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
@@ -58,7 +61,7 @@ export default function Login() {
       // Use the member's email and member_number for authentication
       const { error } = await supabase.auth.signInWithPassword({
         email: member.email,
-        password: memberId, // Use member ID as password
+        password: member.member_number, // Use member_number as password instead of memberId
       });
 
       if (error) throw error;
@@ -71,7 +74,7 @@ export default function Login() {
       console.error("Member ID login error:", error);
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid member ID or password",
+        description: error instanceof Error ? error.message : "Invalid member ID",
         variant: "destructive",
       });
     } finally {
