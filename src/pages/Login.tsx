@@ -70,12 +70,34 @@ export default function Login() {
         throw new Error("Member ID not found");
       }
 
-      // Generate a valid email if using the temp domain
+      // First try to create the user if they don't exist
       const email = member.email.endsWith('@temp.pwaburton.org') 
         ? `member.${member.member_number}@temporary.org`
         : member.email;
 
-      console.log("Attempting login with member:", { 
+      console.log("Creating/checking auth user with:", { 
+        email,
+        memberId: member.member_number 
+      });
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: member.member_number,
+        options: {
+          data: {
+            member_id: member.id,
+            member_number: member.member_number
+          }
+        }
+      });
+
+      // If user exists, proceed with sign in
+      if (signUpError && !signUpError.message.includes("already registered")) {
+        console.error("Sign up error:", signUpError);
+        throw signUpError;
+      }
+
+      console.log("Attempting login with credentials:", { 
         email,
         memberId: member.member_number 
       });
@@ -86,7 +108,7 @@ export default function Login() {
       });
 
       if (error) {
-        if (error.message === "Email not confirmed") {
+        if (error.message.includes("Email not confirmed")) {
           setShowEmailConfirmation(true);
           throw new Error("Please check your email for confirmation link");
         }
