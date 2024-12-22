@@ -24,17 +24,23 @@ export default function Login() {
 
     try {
       console.log("Attempting email login with:", { email });
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Email login error:", error);
+        throw error;
+      }
 
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
+      if (data?.user) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        navigate("/admin");
+      }
     } catch (error) {
       console.error("Email login error:", error);
       toast({
@@ -64,67 +70,36 @@ export default function Login() {
         throw new Error("Member ID not found");
       }
 
-      // Check if member has completed registration
-      if (!member.email || member.email.includes('@temp.pwaburton.org') || member.email.includes('@temporary.org')) {
-        // Redirect to registration with member ID
-        navigate('/register', { 
-          state: { 
-            memberId: member.member_number,
-            prefilledData: {
-              fullName: member.full_name,
-              address: member.address,
-              town: member.town,
-              postCode: member.postcode,
-              phone: member.phone,
-              dateOfBirth: member.date_of_birth,
-              gender: member.gender,
-              maritalStatus: member.marital_status
-            }
-          }
-        });
-        return;
-      }
-
-      // Generate a valid temporary email if using the temp domain
+      // Generate a valid email if using the temp domain
       const email = member.email.endsWith('@temp.pwaburton.org') 
         ? `member.${member.member_number}@temporary.org`
         : member.email;
 
-      // First, try to create the user if they don't exist
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password: member.member_number,
-      });
-
-      if (signUpError && signUpError.message !== "User already registered") {
-        console.error("Sign up error:", signUpError);
-        throw signUpError;
-      }
-
-      // Now attempt to sign in
       console.log("Attempting login with member:", { 
         email,
         memberId: member.member_number 
       });
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: member.member_number,
       });
 
-      if (signInError) {
-        if (signInError.message === "Email not confirmed") {
+      if (error) {
+        if (error.message === "Email not confirmed") {
           setShowEmailConfirmation(true);
           throw new Error("Please check your email for confirmation link");
         }
-        console.error("Auth error:", signInError);
-        throw signInError;
+        throw error;
       }
 
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
+      if (data?.user) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        navigate("/admin");
+      }
     } catch (error) {
       console.error("Member ID login error:", error);
       toast({
