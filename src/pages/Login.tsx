@@ -73,50 +73,45 @@ export default function Login() {
       // Generate temporary email if needed
       const tempEmail = `member.${member.member_number.toLowerCase()}@temporary.org`;
       const email = member.email?.endsWith('@temp.pwaburton.org') 
-        ? tempEmail
+        ? tempEmail 
         : member.email;
 
       if (!email) {
         throw new Error("No email associated with this member ID");
       }
 
-      // Try to sign in first
-      console.log("Attempting login with credentials:", { 
+      // First try to create the user account
+      console.log("Attempting to create user account:", { 
         email,
         memberId: member.member_number 
       });
 
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: member.member_number,
+        options: {
+          data: {
+            member_id: member.id,
+            member_number: member.member_number,
+            full_name: member.full_name
+          }
+        }
+      });
+
+      if (signUpError && !signUpError.message.includes("User already registered")) {
+        console.error("Sign up error:", signUpError);
+        throw signUpError;
+      }
+
+      // Now attempt to sign in
+      console.log("Attempting to sign in with credentials");
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password: member.member_number,
       });
 
-      // If sign in fails, try to create the account
-      if (signInError && signInError.message.includes("Invalid login credentials")) {
-        console.log("User doesn't exist, creating new account");
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: member.member_number,
-          options: {
-            data: {
-              member_id: member.id,
-              member_number: member.member_number,
-              full_name: member.full_name
-            }
-          }
-        });
-
-        if (signUpError) {
-          console.error("Sign up error:", signUpError);
-          throw signUpError;
-        }
-
-        if (signUpData?.user) {
-          setShowEmailConfirmation(true);
-          throw new Error("Please check your email for confirmation link");
-        }
-      } else if (signInError) {
+      if (signInError) {
+        console.error("Sign in error:", signInError);
         throw signInError;
       }
 
@@ -126,7 +121,11 @@ export default function Login() {
           description: "Welcome back!",
         });
         navigate("/admin");
+      } else if (signUpData?.user) {
+        setShowEmailConfirmation(true);
+        throw new Error("Please check your email for confirmation link");
       }
+
     } catch (error) {
       console.error("Member ID login error:", error);
       toast({
