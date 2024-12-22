@@ -60,6 +60,7 @@ export default function Login() {
     
     const formData = new FormData(e.currentTarget);
     const memberId = formData.get('memberId') as string;
+    const password = formData.get('password') as string;
     
     try {
       console.log("Looking up member with ID:", memberId);
@@ -88,7 +89,7 @@ export default function Login() {
 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
-        password: member.member_number,
+        password,
         options: {
           data: {
             member_id: member.id,
@@ -107,7 +108,7 @@ export default function Login() {
       console.log("Attempting to sign in with credentials");
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: member.member_number,
+        password,
       });
 
       if (signInError) {
@@ -130,7 +131,7 @@ export default function Login() {
       console.error("Member ID login error:", error);
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid member ID",
+        description: error instanceof Error ? error.message : "Invalid member ID or password",
         variant: "destructive",
       });
     } finally {
