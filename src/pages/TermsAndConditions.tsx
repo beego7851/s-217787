@@ -7,27 +7,27 @@ import { ChevronLeft } from "lucide-react";
 export default function TermsAndConditions() {
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto animate-fade-in">
         <div className="mb-4">
           <Link to="/">
-            <Button variant="ghost" className="flex items-center gap-2">
+            <Button variant="ghost" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
               <ChevronLeft className="h-4 w-4" />
               Back to Home
             </Button>
           </Link>
         </div>
-        <Card>
-          <CardHeader className="text-center space-y-2">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+        <Card className="animate-fade-in hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="text-center space-y-2 px-4 sm:px-6">
+            <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
               Terms and Conditions
             </CardTitle>
             <p className="text-muted-foreground">Version 4 - December 2024</p>
-            <p className="text-lg font-semibold">Pakistan Welfare Association</p>
+            <p className="text-lg font-semibold bg-gradient-to-r from-primary/90 to-primary/70 bg-clip-text text-transparent">Pakistan Welfare Association</p>
             <p className="text-muted-foreground">Burton Upon Trent</p>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[calc(100vh-250px)] pr-4">
-            <div className="space-y-6">
+              <div className="space-y-6 px-4 sm:px-6">
               <section>
                 <h2 className="text-xl font-semibold mb-2">1. Members Eligibility</h2>
                 <p>Only Muslims can be members of Pakistan Welfare Association (PWA).</p>
@@ -119,11 +119,11 @@ export default function TermsAndConditions() {
                 <p>Any changes to payments made, or rule changes must be voted in within the Committee. This should be communicated to other collector members, and then a wider communication made to members.</p>
               </section>
 
-              <div className="mt-8 pt-4 border-t">
-                <p className="text-center">By becoming a member of the Pakistan Welfare Association, you agree to abide by these terms and conditions outlined above.</p>
-                <p className="text-center text-sm text-muted-foreground mt-4">© 2024 Pakistan Welfare Association. All rights reserved.</p>
+                <div className="mt-8 pt-4 border-t">
+                  <p className="text-center text-muted-foreground">By becoming a member of the Pakistan Welfare Association, you agree to abide by these terms and conditions outlined above.</p>
+                  <p className="text-center text-sm text-muted-foreground mt-4">© 2024 Pakistan Welfare Association. All rights reserved.</p>
+                </div>
               </div>
-            </div>
             </ScrollArea>
           </CardContent>
         </Card>
