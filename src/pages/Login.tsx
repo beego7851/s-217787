@@ -81,8 +81,24 @@ export default function Login() {
         throw new Error("No email associated with this member ID");
       }
 
-      // First try to create the user account
-      console.log("Attempting to create user account:", { 
+      // First try to sign in
+      console.log("Attempting to sign in with credentials");
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (!signInError && signInData?.user) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        navigate("/admin");
+        return;
+      }
+
+      // If sign in fails, try to create the account
+      console.log("Sign in failed, attempting to create account:", { 
         email,
         memberId: member.member_number 
       });
@@ -99,30 +115,12 @@ export default function Login() {
         }
       });
 
-      if (signUpError && !signUpError.message.includes("User already registered")) {
+      if (signUpError) {
         console.error("Sign up error:", signUpError);
         throw signUpError;
       }
 
-      // Now attempt to sign in
-      console.log("Attempting to sign in with credentials");
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInError) {
-        console.error("Sign in error:", signInError);
-        throw signInError;
-      }
-
-      if (signInData?.user) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        navigate("/admin");
-      } else if (signUpData?.user) {
+      if (signUpData?.user) {
         setShowEmailConfirmation(true);
         throw new Error("Please check your email for confirmation link");
       }
