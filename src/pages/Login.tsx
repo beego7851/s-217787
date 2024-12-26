@@ -81,31 +81,32 @@ export default function Login() {
         throw new Error("No email associated with this member ID");
       }
 
-      // First try to sign in
-      console.log("Attempting to sign in with credentials");
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (!signInError && signInData?.user) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
+      // Check if user exists by trying to get user by email
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+      
+      if (!userError && userData?.user) {
+        // User exists, try to sign in with provided credentials
+        console.log("User exists, attempting to sign in");
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: member.member_number, // Use member number as password
         });
-        navigate("/admin");
-        return;
+
+        if (!signInError && signInData?.user) {
+          toast({
+            title: "Login successful",
+            description: "Welcome back!",
+          });
+          navigate("/admin");
+          return;
+        }
       }
 
-      // If sign in fails, try to create the account
-      console.log("Sign in failed, attempting to create account:", { 
-        email,
-        memberId: member.member_number 
-      });
-
+      // If user doesn't exist or sign in failed, create new account
+      console.log("Creating new account:", { email, memberId: member.member_number });
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
-        password,
+        password: member.member_number,
         options: {
           data: {
             member_id: member.id,
