@@ -14,9 +14,9 @@ export default function Profile() {
   const [searchAmount, setSearchAmount] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [memberNumber, setMemberNumber] = useState<string | null>(null);
 
-  // Check authentication and get user email
+  // Check authentication and get member number
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -24,7 +24,14 @@ export default function Profile() {
         navigate("/login");
         return;
       }
-      setUserEmail(session.user.email);
+      // Extract member number from email (assuming email format: member.XX00000@temp.pwaburton.org)
+      const email = session.user.email;
+      if (email) {
+        const memberNumberMatch = email.match(/^member\.(.+)@/);
+        if (memberNumberMatch) {
+          setMemberNumber(memberNumberMatch[1].toUpperCase());
+        }
+      }
     };
 
     checkAuth();
@@ -33,7 +40,13 @@ export default function Profile() {
       if (!session) {
         navigate("/login");
       } else {
-        setUserEmail(session.user.email);
+        const email = session.user.email;
+        if (email) {
+          const memberNumberMatch = email.match(/^member\.(.+)@/);
+          if (memberNumberMatch) {
+            setMemberNumber(memberNumberMatch[1].toUpperCase());
+          }
+        }
       }
     });
 
@@ -42,17 +55,17 @@ export default function Profile() {
     };
   }, [navigate]);
 
-  // Fetch member profile data
+  // Fetch member profile data using member number
   const { data: memberData, isLoading: memberLoading } = useQuery({
-    queryKey: ['member-profile', userEmail],
-    enabled: !!userEmail,
+    queryKey: ['member-profile', memberNumber],
+    enabled: !!memberNumber,
     queryFn: async () => {
-      console.log('Fetching profile for email:', userEmail);
+      console.log('Fetching profile for member number:', memberNumber);
       
       const { data, error } = await supabase
         .from('members')
         .select('*, family_members(*)')
-        .eq('email', userEmail)
+        .eq('member_number', memberNumber)
         .maybeSingle();
 
       if (error) {
@@ -66,10 +79,10 @@ export default function Profile() {
       }
 
       if (!data) {
-        console.log('No profile found for email:', userEmail);
+        console.log('No profile found for member number:', memberNumber);
         toast({
           title: "Profile not found",
-          description: "No member profile found for this email address.",
+          description: "No member profile found for this member number.",
           variant: "destructive",
         });
         return null;
