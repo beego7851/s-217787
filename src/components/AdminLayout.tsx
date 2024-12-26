@@ -9,6 +9,7 @@ import {
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "../integrations/supabase/client";
+import { useToast } from "./ui/use-toast";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/admin" },
@@ -25,26 +26,84 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkSession = async () => {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          await supabase.auth.signOut();
+          setIsLoggedIn(false);
+          navigate("/login");
+          return;
+        }
+
+        if (!session) {
+          setIsLoggedIn(false);
+          navigate("/login");
+          return;
+        }
+
+        // Verify the user still exists
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error("User verification error:", userError);
+          await supabase.auth.signOut();
+          setIsLoggedIn(false);
+          navigate("/login");
+          toast({
+            title: "Session expired",
+            description: "Please log in again",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsLoggedIn(false);
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, !!session);
+      
+      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+        setIsLoggedIn(false);
+        navigate("/login");
+      } else if (event === "SIGNED_IN" && session) {
+        setIsLoggedIn(true);
+      } else if (event === "TOKEN_REFRESHED") {
+        // Verify the refreshed session is still valid
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+          await supabase.auth.signOut();
+          setIsLoggedIn(false);
+          navigate("/login");
+          toast({
+            title: "Session expired",
+            description: "Please log in again",
+            variant: "destructive",
+          });
+        }
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
-
+  }, [navigate, toast]);
 
   if (loading) {
     return <div>Loading...</div>;
