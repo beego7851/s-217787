@@ -60,6 +60,7 @@ export default function Login() {
     
     const formData = new FormData(e.currentTarget);
     const memberId = formData.get('memberId') as string;
+    const password = formData.get('password') as string;
     
     try {
       console.log("Looking up member with ID:", memberId);
@@ -70,23 +71,15 @@ export default function Login() {
         throw new Error("Member ID not found");
       }
 
-      // Generate temporary email if needed
+      // Use the temporary email format for authentication
       const tempEmail = `member.${member.member_number.toLowerCase()}@temporary.org`;
-      const email = member.email?.endsWith('@temp.pwaburton.org') 
-        ? tempEmail 
-        : member.email;
+      
+      // Create a secure password by combining member number and provided password
+      const securePassword = `${member.member_number}${password}`;
 
-      if (!email) {
-        throw new Error("No email associated with this member ID");
-      }
-
-      // Create a password that meets minimum requirements (at least 6 characters)
-      const securePassword = member.member_number.padEnd(6, member.member_number);
-
-      // First try to sign in
       console.log("Attempting to sign in with member number");
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: tempEmail,
         password: securePassword,
       });
 
@@ -100,39 +93,34 @@ export default function Login() {
       }
 
       // If sign in fails, try to create a new account
-      console.log("Sign in failed, creating new account:", { email, memberId: member.member_number });
+      console.log("Sign in failed, creating new account:", { email: tempEmail, memberId: member.member_number });
       
-      try {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: securePassword,
-          options: {
-            data: {
-              member_id: member.id,
-              member_number: member.member_number,
-              full_name: member.full_name
-            }
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: tempEmail,
+        password: securePassword,
+        options: {
+          data: {
+            member_id: member.id,
+            member_number: member.member_number,
+            full_name: member.full_name
           }
-        });
-
-        if (signUpError) {
-          // If user already exists but password is wrong, show specific error
-          if (signUpError.message.includes("User already registered")) {
-            throw new Error("Account exists but password is incorrect. Please try again or contact support.");
-          }
-          throw signUpError;
         }
+      });
 
-        if (signUpData?.user) {
-          setShowEmailConfirmation(true);
-          toast({
-            title: "Account created",
-            description: "Please check your email for confirmation link",
-          });
+      if (signUpError) {
+        // If user already exists but password is wrong, show specific error
+        if (signUpError.message.includes("User already registered")) {
+          throw new Error("Account exists but password is incorrect. Please try again or contact support.");
         }
-      } catch (signUpError) {
-        console.error("Sign up error:", signUpError);
         throw signUpError;
+      }
+
+      if (signUpData?.user) {
+        setShowEmailConfirmation(true);
+        toast({
+          title: "Account created",
+          description: "Please check your email for confirmation link",
+        });
       }
 
     } catch (error) {
