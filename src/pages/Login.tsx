@@ -60,7 +60,6 @@ export default function Login() {
     
     const formData = new FormData(e.currentTarget);
     const memberId = formData.get('memberId') as string;
-    const password = formData.get('password') as string;
     
     try {
       console.log("Looking up member with ID:", memberId);
@@ -81,11 +80,14 @@ export default function Login() {
         throw new Error("No email associated with this member ID");
       }
 
-      // First try to sign in with member number as password
+      // Create a password that meets minimum requirements (at least 6 characters)
+      const securePassword = member.member_number.padEnd(6, member.member_number);
+
+      // First try to sign in
       console.log("Attempting to sign in with member number");
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: member.member_number,
+        password: securePassword,
       });
 
       if (!signInError && signInData?.user) {
@@ -101,7 +103,7 @@ export default function Login() {
       console.log("Sign in failed, creating new account:", { email, memberId: member.member_number });
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
-        password: member.member_number,
+        password: securePassword,
         options: {
           data: {
             member_id: member.id,
