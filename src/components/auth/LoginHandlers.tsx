@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 export async function handleMemberIdLogin(memberId: string, navigate: ReturnType<typeof useNavigate>) {
   // Logic for member ID login
@@ -52,7 +53,8 @@ export async function handleEmailLogin(
       throw listError;
     }
 
-    const existingUser = users?.find(user => user.email === email);
+    // Properly type the users array
+    const existingUser = (users as User[] | null)?.find(user => user.email === email);
     
     if (existingUser) {
       toast({
