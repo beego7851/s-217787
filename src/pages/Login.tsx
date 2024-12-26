@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { LoginTabs } from "../components/auth/LoginTabs";
 import { useNavigate } from "react-router-dom";
+import { LoginTabs } from "../components/auth/LoginTabs";
 import { useToast } from "../hooks/use-toast";
-import { getMemberByMemberId } from "../utils/memberAuth";
-import { supabase } from "../integrations/supabase/client";
+import { handleEmailLogin, handleMemberIdLogin } from "../components/auth/LoginHandlers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
@@ -23,29 +22,12 @@ export default function Login() {
     const password = formData.get('password') as string;
 
     try {
-      console.log("Attempting email login with:", { email });
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error("Email login error:", error);
-        throw error;
-      }
-
-      if (data?.user) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        navigate("/admin");
-      }
+      await handleEmailLogin(email, password, setIsLoading, navigate);
     } catch (error) {
       console.error("Email login error:", error);
       toast({
         title: "Login failed",
-        description: "Invalid email or password",
+        description: error instanceof Error ? error.message : "Invalid email or password",
         variant: "destructive",
       });
     } finally {
@@ -63,66 +45,8 @@ export default function Login() {
     const password = formData.get('password') as string;
     
     try {
-      console.log("Looking up member with ID:", memberId);
-      const member = await getMemberByMemberId(memberId);
-      console.log("Member lookup result:", member);
-
-      if (!member) {
-        throw new Error("Member ID not found");
-      }
-
-      // Use the temporary email format for authentication
-      const tempEmail = `member.${member.member_number.toLowerCase()}@temporary.org`;
-      
-      // Create a secure password by combining member number and provided password
-      const securePassword = `${member.member_number}${password}`;
-
-      console.log("Attempting to sign in with member number");
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: tempEmail,
-        password: securePassword,
-      });
-
-      if (!signInError && signInData?.user) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        navigate("/admin");
-        return;
-      }
-
-      // If sign in fails, try to create a new account
-      console.log("Sign in failed, creating new account:", { email: tempEmail, memberId: member.member_number });
-      
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: tempEmail,
-        password: securePassword,
-        options: {
-          data: {
-            member_id: member.id,
-            member_number: member.member_number,
-            full_name: member.full_name
-          }
-        }
-      });
-
-      if (signUpError) {
-        // If user already exists but password is wrong, show specific error
-        if (signUpError.message.includes("User already registered")) {
-          throw new Error("Account exists but password is incorrect. Please try again or contact support.");
-        }
-        throw signUpError;
-      }
-
-      if (signUpData?.user) {
-        setShowEmailConfirmation(true);
-        toast({
-          title: "Account created",
-          description: "Please check your email for confirmation link",
-        });
-      }
-
+      console.log("Attempting member ID login with:", { memberId });
+      await handleMemberIdLogin(memberId, password, navigate);
     } catch (error) {
       console.error("Member ID login error:", error);
       toast({
