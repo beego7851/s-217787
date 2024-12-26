@@ -4,11 +4,18 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
-export async function handleMemberIdLogin(memberId: string, navigate: ReturnType<typeof useNavigate>) {
-  // Logic for member ID login
+export async function handleMemberIdLogin(memberId: string, password: string, navigate: ReturnType<typeof useNavigate>) {
+  // Create a secure password by combining member ID and provided password
+  const securePassword = `${memberId}${password}`;
+  
+  // Use a consistent email format for member ID login
+  const email = `member.${memberId.toLowerCase()}@temporary.org`;
+  
+  console.log("Attempting member ID login with:", { email });
+  
   const { error } = await supabase.auth.signInWithPassword({
-    email: `${memberId}@example.com`, // Assuming member ID is used as email prefix
-    password: 'defaultPassword', // Replace with actual logic for password
+    email,
+    password: securePassword,
   });
 
   if (error) {

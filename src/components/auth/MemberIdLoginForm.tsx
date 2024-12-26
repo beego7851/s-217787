@@ -13,15 +13,20 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const cleanMemberId = memberId.toUpperCase().trim();
     
-    // Create a FormData object with both member ID and password
-    const formData = new FormData();
+    // Create a new FormData instance
+    const formData = new FormData(e.currentTarget);
+    
+    // Clean and set the member ID
+    const cleanMemberId = memberId.toUpperCase().trim();
     formData.set('memberId', cleanMemberId);
+    
+    // Set the password
     formData.set('password', password);
     
     console.log("Login attempt with:", {
       memberId: cleanMemberId,
+      hasPassword: !!password,
     });
     
     await onSubmit(e);
@@ -52,6 +57,7 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={isLoading}
+          minLength={6}
         />
       </div>
       <Button type="submit" className="w-full" disabled={isLoading}>
