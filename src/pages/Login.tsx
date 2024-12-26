@@ -99,28 +99,40 @@ export default function Login() {
         return;
       }
 
-      // If sign in fails, create a new account
+      // If sign in fails, try to create a new account
       console.log("Sign in failed, creating new account:", { email, memberId: member.member_number });
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password: securePassword,
-        options: {
-          data: {
-            member_id: member.id,
-            member_number: member.member_number,
-            full_name: member.full_name
+      
+      try {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password: securePassword,
+          options: {
+            data: {
+              member_id: member.id,
+              member_number: member.member_number,
+              full_name: member.full_name
+            }
           }
-        }
-      });
+        });
 
-      if (signUpError) {
+        if (signUpError) {
+          // If user already exists but password is wrong, show specific error
+          if (signUpError.message.includes("User already registered")) {
+            throw new Error("Account exists but password is incorrect. Please try again or contact support.");
+          }
+          throw signUpError;
+        }
+
+        if (signUpData?.user) {
+          setShowEmailConfirmation(true);
+          toast({
+            title: "Account created",
+            description: "Please check your email for confirmation link",
+          });
+        }
+      } catch (signUpError) {
         console.error("Sign up error:", signUpError);
         throw signUpError;
-      }
-
-      if (signUpData?.user) {
-        setShowEmailConfirmation(true);
-        throw new Error("Please check your email for confirmation link");
       }
 
     } catch (error) {
