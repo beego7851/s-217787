@@ -71,10 +71,11 @@ export const useLoginHandlers = (setIsLoggedIn: (value: boolean) => void) => {
         return;
       }
 
-      // If sign in fails, check if user exists
-      const { data: userExists } = await supabase.auth.admin.getUserByEmail(email);
+      // If sign in fails, try to find the user by email
+      const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+      const existingUser = users?.users.find(u => u.email === email);
       
-      if (userExists) {
+      if (existingUser) {
         toast({
           title: "Login failed",
           description: "Invalid password. Please try again or contact support.",
