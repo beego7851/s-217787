@@ -47,7 +47,10 @@ export function UserList({ users, onUpdate, updating, setUpdating }: UserListPro
       {users.map((user) => (
         <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
           <div className="space-y-1">
-            <p className="font-medium">{user.email}</p>
+            <p className="font-medium">{user.member_number || 'No Member Number'}</p>
+            <p className="text-sm text-muted-foreground">
+              Email: {user.email}
+            </p>
             <p className="text-sm text-muted-foreground">
               Last login: {user.last_sign_in_at 
                 ? new Date(user.last_sign_in_at).toLocaleString() 
