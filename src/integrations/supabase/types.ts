@@ -546,6 +546,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_collector: {
+        Args: {
+          collector_id: string
+        }
+        Returns: undefined
+      }
       merge_duplicate_collectors: {
         Args: Record<PropertyKey, never>
         Returns: {

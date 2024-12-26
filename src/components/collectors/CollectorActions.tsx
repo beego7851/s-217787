@@ -43,9 +43,9 @@ export function CollectorActions({ collector, collectors, onEdit, onUpdate }: Co
 
     setIsLoading(true);
     try {
-      // Start a transaction using RPC to ensure atomicity
-      const { data, error } = await supabase.rpc('delete_collector', {
-        collector_id: collector.id
+      // Call the delete_collector function using a direct RPC call
+      const { error } = await supabase.functions.invoke('delete-collector', {
+        body: { collector_id: collector.id }
       });
 
       if (error) throw error;
