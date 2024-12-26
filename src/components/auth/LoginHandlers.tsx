@@ -3,27 +3,62 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { getMemberByMemberId } from "@/utils/memberAuth";
 
 export async function handleMemberIdLogin(memberId: string, password: string, navigate: ReturnType<typeof useNavigate>) {
-  // Create a secure password by combining member ID and provided password
-  const securePassword = `${memberId}${password}`;
+  // First, look up the member
+  const member = await getMemberByMemberId(memberId);
+  
+  if (!member) {
+    throw new Error("Member ID not found");
+  }
   
   // Use a consistent email format for member ID login
   const email = `member.${memberId.toLowerCase()}@temporary.org`;
   
+  // Create a secure password by combining member ID and provided password
+  const securePassword = `${memberId}${password}`;
+  
   console.log("Attempting member ID login with:", { email });
   
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password: securePassword,
-  });
+  try {
+    // First try to sign in
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: securePassword,
+    });
 
-  if (error) {
-    console.error('Member ID login error:', error);
+    if (!signInError && signInData?.user) {
+      navigate("/admin");
+      return;
+    }
+
+    // If sign in fails, try to create the account
+    console.log("Sign in failed, attempting to create account");
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password: securePassword,
+      options: {
+        data: {
+          member_id: member.id,
+          member_number: member.member_number,
+          full_name: member.full_name
+        }
+      }
+    });
+
+    if (signUpError) {
+      console.error('Sign up error:', signUpError);
+      throw signUpError;
+    }
+
+    if (signUpData?.user) {
+      navigate("/admin");
+    }
+  } catch (error) {
+    console.error('Authentication error:', error);
     throw error;
   }
-
-  navigate("/admin/dashboard");
 }
 
 export async function handleEmailLogin(
@@ -39,14 +74,14 @@ export async function handleEmailLogin(
     console.log('Attempting to sign in with:', { email });
 
     // Try to sign in first
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password: password.padEnd(6, '0'), // Ensure minimum length
     });
 
-    if (!signInError) {
+    if (!signInError && signInData?.user) {
       console.log('Sign in successful');
-      navigate("/admin/dashboard");
+      navigate("/admin");
       return;
     }
 
@@ -64,17 +99,12 @@ export async function handleEmailLogin(
     const existingUser = (users as User[] | null)?.find(user => user.email === email);
     
     if (existingUser) {
-      toast({
-        title: "Login failed",
-        description: "Invalid password. Please try again or contact support.",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("Invalid password. Please try again or contact support.");
     }
 
     // If user doesn't exist, try to sign up
     console.log('User not found, attempting to sign up...');
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password: password.padEnd(6, '0'), // Ensure minimum length
     });
@@ -92,11 +122,7 @@ export async function handleEmailLogin(
 
   } catch (error) {
     console.error('Authentication error:', error);
-    toast({
-      title: "Authentication error",
-      description: error instanceof Error ? error.message : "An unexpected error occurred",
-      variant: "destructive",
-    });
+    throw error;
   } finally {
     setIsLoading(false);
   }
