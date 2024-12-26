@@ -36,7 +36,6 @@ export function AdminLayout() {
         
         if (error) {
           console.error("Session check error:", error);
-          await supabase.auth.signOut();
           setIsLoggedIn(false);
           navigate("/login");
           return;
@@ -53,14 +52,18 @@ export function AdminLayout() {
         
         if (userError || !user) {
           console.error("User verification error:", userError);
-          await supabase.auth.signOut();
-          setIsLoggedIn(false);
-          navigate("/login");
-          toast({
-            title: "Session expired",
-            description: "Please log in again",
-            variant: "destructive",
-          });
+          try {
+            // Try to sign out, but don't wait for it
+            supabase.auth.signOut().catch(e => console.error("Sign out error:", e));
+          } finally {
+            setIsLoggedIn(false);
+            navigate("/login");
+            toast({
+              title: "Session expired",
+              description: "Please log in again",
+              variant: "destructive",
+            });
+          }
           return;
         }
 
@@ -79,7 +82,7 @@ export function AdminLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, !!session);
       
-      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+      if (event === "SIGNED_OUT") {
         setIsLoggedIn(false);
         navigate("/login");
       } else if (event === "SIGNED_IN" && session) {
@@ -88,14 +91,18 @@ export function AdminLayout() {
         // Verify the refreshed session is still valid
         const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) {
-          await supabase.auth.signOut();
-          setIsLoggedIn(false);
-          navigate("/login");
-          toast({
-            title: "Session expired",
-            description: "Please log in again",
-            variant: "destructive",
-          });
+          try {
+            // Try to sign out, but don't wait for it
+            supabase.auth.signOut().catch(e => console.error("Sign out error:", e));
+          } finally {
+            setIsLoggedIn(false);
+            navigate("/login");
+            toast({
+              title: "Session expired",
+              description: "Please log in again",
+              variant: "destructive",
+            });
+          }
         }
       }
     });
