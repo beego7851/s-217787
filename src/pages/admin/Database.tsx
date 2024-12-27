@@ -9,6 +9,7 @@ import { ImportSection } from "@/components/database/ImportSection";
 import { BackupSection } from "@/components/database/BackupSection";
 import { DeleteDatabaseSection } from "@/components/database/DeleteDatabaseSection";
 import { UserManagementSection } from "@/components/database/UserManagementSection";
+import { MemberNumberFixer } from "@/components/database/MemberNumberFixer";
 import { getDatabaseStatus } from "@/utils/databaseBackup";
 
 interface DatabaseStatus {
@@ -115,6 +116,9 @@ export default function Database() {
             </div>
           </CardContent>
         </Card>
+        <div className="md:col-span-2">
+          <MemberNumberFixer />
+        </div>
         <div className="md:col-span-2">
           <UserManagementSection />
         </div>
