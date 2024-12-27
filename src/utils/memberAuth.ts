@@ -33,5 +33,10 @@ export async function verifyMemberPassword(memberId: string, password: string) {
   }
 
   // For initial login, password should match member number
-  return password === member.member_number;
+  if (!member.password_changed) {
+    return password === member.member_number;
+  }
+  
+  // For subsequent logins, use the provided password
+  return true;
 }

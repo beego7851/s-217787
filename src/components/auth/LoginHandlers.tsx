@@ -10,10 +10,10 @@ export async function handleMemberIdLogin(memberId: string, password: string, na
     throw new Error("Member ID not found");
   }
   
-  // Use member number for email and password for authentication
-  const email = `${memberId.toLowerCase()}@pwaburton.org`;
+  // Use member number for email
+  const email = `${member.member_number.toLowerCase()}@pwaburton.org`;
   
-  console.log("Attempting member ID login with:", { memberId });
+  console.log("Attempting member ID login with:", { memberId, email });
   
   try {
     // Try to sign in
@@ -22,7 +22,27 @@ export async function handleMemberIdLogin(memberId: string, password: string, na
       password,
     });
 
-    if (!signInError && signInData?.user) {
+    if (signInError) {
+      console.error('Sign in error:', signInError);
+      
+      // If it's the first login attempt, try with default password
+      if (signInError.message.includes("Invalid login credentials") && !member.password_changed) {
+        console.log("First login attempt, trying with default password");
+        const { data: defaultSignInData, error: defaultSignInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: member.member_number, // Use member number as default password
+        });
+
+        if (!defaultSignInError && defaultSignInData?.user) {
+          navigate("/admin");
+          return;
+        }
+      }
+      
+      throw new Error("Invalid member ID or password");
+    }
+
+    if (signInData?.user) {
       navigate("/admin");
       return;
     }
@@ -31,7 +51,7 @@ export async function handleMemberIdLogin(memberId: string, password: string, na
     console.log("Sign in failed, attempting to create account");
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
-      password,
+      password: member.member_number, // Use member number as initial password
       options: {
         data: {
           member_id: member.id,
