@@ -24,13 +24,13 @@ export default function Profile() {
         navigate("/login");
         return;
       }
-      // Extract member number from email (assuming email format: member.XX00000@temp.pwaburton.org)
+
+      // Get member number from email (format: TM00001@pwaburton.org)
       const email = session.user.email;
       if (email) {
-        const memberNumberMatch = email.match(/^member\.(.+)@/);
-        if (memberNumberMatch) {
-          setMemberNumber(memberNumberMatch[1].toUpperCase());
-        }
+        const memberNumber = email.split('@')[0].toUpperCase();
+        console.log('Extracted member number:', memberNumber);
+        setMemberNumber(memberNumber);
       }
     };
 
@@ -42,10 +42,8 @@ export default function Profile() {
       } else {
         const email = session.user.email;
         if (email) {
-          const memberNumberMatch = email.match(/^member\.(.+)@/);
-          if (memberNumberMatch) {
-            setMemberNumber(memberNumberMatch[1].toUpperCase());
-          }
+          const memberNumber = email.split('@')[0].toUpperCase();
+          setMemberNumber(memberNumber);
         }
       }
     });
