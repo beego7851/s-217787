@@ -16,15 +16,16 @@ export default function Login() {
     
     const formData = new FormData(e.currentTarget);
     const memberId = formData.get('memberId') as string;
+    const password = formData.get('password') as string;
     
     try {
       console.log("Attempting member ID login with:", { memberId });
-      await handleMemberIdLogin(memberId, navigate);
+      await handleMemberIdLogin(memberId, password, navigate);
     } catch (error) {
       console.error("Member ID login error:", error);
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid member ID",
+        description: error instanceof Error ? error.message : "Invalid member ID or password",
         variant: "destructive",
       });
     } finally {

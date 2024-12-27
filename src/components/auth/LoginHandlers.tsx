@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getMemberByMemberId } from "@/utils/memberAuth";
 
-export async function handleMemberIdLogin(memberId: string, navigate: ReturnType<typeof useNavigate>) {
+export async function handleMemberIdLogin(memberId: string, password: string, navigate: ReturnType<typeof useNavigate>) {
   // First, look up the member
   const member = await getMemberByMemberId(memberId);
   
@@ -10,9 +10,8 @@ export async function handleMemberIdLogin(memberId: string, navigate: ReturnType
     throw new Error("Member ID not found");
   }
   
-  // Use member number for both email and password
+  // Use member number for email and password for authentication
   const email = `${memberId.toLowerCase()}@pwaburton.org`;
-  const password = memberId;
   
   console.log("Attempting member ID login with:", { memberId });
   
@@ -28,7 +27,7 @@ export async function handleMemberIdLogin(memberId: string, navigate: ReturnType
       return;
     }
 
-    // If sign in fails, create account
+    // If sign in fails, create account with provided password
     console.log("Sign in failed, attempting to create account");
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
