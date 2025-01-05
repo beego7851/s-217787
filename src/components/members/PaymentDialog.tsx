@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Banknote } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -21,8 +21,18 @@ const PaymentDialog = ({ isOpen, onClose, memberId, memberNumber, memberName, co
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedPaymentType, setSelectedPaymentType] = useState<string>('yearly');
-  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const [paymentAmount, setPaymentAmount] = useState<string>('40');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank_transfer'>('cash');
+
+  // Handle payment type change
+  const handlePaymentTypeChange = (value: string) => {
+    setSelectedPaymentType(value);
+    if (value === 'yearly') {
+      setPaymentAmount('40');
+    } else {
+      setPaymentAmount('');
+    }
+  };
 
   const createPaymentRequest = useMutation({
     mutationFn: async ({ 
@@ -106,68 +116,76 @@ const PaymentDialog = ({ isOpen, onClose, memberId, memberNumber, memberName, co
         <DialogHeader>
           <DialogTitle className="text-dashboard-accent2">Record Payment for {memberName}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label className="text-sm font-medium mb-1 block text-dashboard-text">Payment Type</label>
-            <Select
+            <label className="text-sm font-medium mb-3 block text-dashboard-text">Payment Type</label>
+            <ToggleGroup
+              type="single"
               value={selectedPaymentType}
-              onValueChange={setSelectedPaymentType}
+              onValueChange={handlePaymentTypeChange}
+              className="justify-start gap-4"
             >
-              <SelectTrigger className="border-dashboard-accent1/20 bg-dashboard-dark">
-                <SelectValue placeholder="Select payment type" />
-              </SelectTrigger>
-              <SelectContent className="bg-dashboard-card border-dashboard-accent1/20">
-                <SelectItem value="yearly">Yearly Payment</SelectItem>
-                <SelectItem value="emergency">Emergency Collection</SelectItem>
-              </SelectContent>
-            </Select>
+              <ToggleGroupItem 
+                value="yearly" 
+                className="h-12 px-6 data-[state=on]:bg-dashboard-accent1 data-[state=on]:text-white border-dashboard-accent1/20"
+              >
+                Yearly Payment
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="emergency" 
+                className="h-12 px-6 data-[state=on]:bg-dashboard-accent1 data-[state=on]:text-white border-dashboard-accent1/20"
+              >
+                Emergency Collection
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block text-dashboard-text">Amount</label>
+            <label className="text-sm font-medium mb-3 block text-dashboard-text">Amount</label>
             <Input
               type="number"
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
               placeholder="Enter amount"
-              className="border-dashboard-accent1/20 bg-dashboard-dark"
+              className="border-dashboard-accent1/20 bg-dashboard-dark h-12 text-lg"
+              readOnly={selectedPaymentType === 'yearly'}
             />
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block text-dashboard-text">Payment Method</label>
-            <div className="flex gap-2">
+            <label className="text-sm font-medium mb-3 block text-dashboard-text">Payment Method</label>
+            <div className="flex gap-4">
               <Button
                 type="button"
                 variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                 onClick={() => setPaymentMethod('cash')}
-                className={`flex-1 ${
+                className={`flex-1 h-12 ${
                   paymentMethod === 'cash' 
                     ? 'bg-dashboard-accent1 hover:bg-dashboard-accent1/80' 
                     : 'border-dashboard-accent1/20 hover:bg-dashboard-accent1/10'
                 }`}
               >
-                <Banknote className="w-4 h-4 mr-2" />
+                <Banknote className="w-5 h-5 mr-2" />
                 Cash
               </Button>
               <Button
                 type="button"
                 variant={paymentMethod === 'bank_transfer' ? 'default' : 'outline'}
                 onClick={() => setPaymentMethod('bank_transfer')}
-                className={`flex-1 ${
+                className={`flex-1 h-12 ${
                   paymentMethod === 'bank_transfer' 
                     ? 'bg-dashboard-accent1 hover:bg-dashboard-accent1/80' 
                     : 'border-dashboard-accent1/20 hover:bg-dashboard-accent1/10'
                 }`}
               >
-                <CreditCard className="w-4 h-4 mr-2" />
+                <CreditCard className="w-5 h-5 mr-2" />
                 Bank Transfer
               </Button>
             </div>
           </div>
           
           <Button 
-            className="w-full bg-dashboard-accent2 hover:bg-dashboard-accent2/80 text-white"
+            className="w-full bg-dashboard-accent2 hover:bg-dashboard-accent2/80 text-white h-12 text-lg font-medium"
             onClick={handlePaymentSubmit}
             disabled={!paymentAmount || createPaymentRequest.isPending}
           >
