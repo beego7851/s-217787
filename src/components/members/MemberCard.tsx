@@ -82,9 +82,8 @@ const MemberCard = ({ member, userRole, onPaymentClick }: MemberCardProps) => {
         {userRole === 'collector' && (
           <div className="mt-4 pt-4 border-t border-white/10">
             <Button 
-              variant="outline" 
-              className="w-full"
               onClick={onPaymentClick}
+              className="w-full bg-dashboard-accent1 hover:bg-dashboard-accent1/80 text-white transition-colors"
             >
               Record Payment
             </Button>

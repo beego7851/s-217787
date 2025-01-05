@@ -102,21 +102,21 @@ const PaymentDialog = ({ isOpen, onClose, memberId, memberNumber, memberName, co
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="bg-dashboard-card border-dashboard-accent1/20">
         <DialogHeader>
-          <DialogTitle>Record Payment for {memberName}</DialogTitle>
+          <DialogTitle className="text-dashboard-accent2">Record Payment for {memberName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium mb-1 block">Payment Type</label>
+            <label className="text-sm font-medium mb-1 block text-dashboard-text">Payment Type</label>
             <Select
               value={selectedPaymentType}
               onValueChange={setSelectedPaymentType}
             >
-              <SelectTrigger>
+              <SelectTrigger className="border-dashboard-accent1/20 bg-dashboard-dark">
                 <SelectValue placeholder="Select payment type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-dashboard-card border-dashboard-accent1/20">
                 <SelectItem value="yearly">Yearly Payment</SelectItem>
                 <SelectItem value="emergency">Emergency Collection</SelectItem>
               </SelectContent>
@@ -124,23 +124,28 @@ const PaymentDialog = ({ isOpen, onClose, memberId, memberNumber, memberName, co
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Amount</label>
+            <label className="text-sm font-medium mb-1 block text-dashboard-text">Amount</label>
             <Input
               type="number"
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
               placeholder="Enter amount"
+              className="border-dashboard-accent1/20 bg-dashboard-dark"
             />
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-1 block">Payment Method</label>
+            <label className="text-sm font-medium mb-1 block text-dashboard-text">Payment Method</label>
             <div className="flex gap-2">
               <Button
                 type="button"
                 variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                 onClick={() => setPaymentMethod('cash')}
-                className="flex-1"
+                className={`flex-1 ${
+                  paymentMethod === 'cash' 
+                    ? 'bg-dashboard-accent1 hover:bg-dashboard-accent1/80' 
+                    : 'border-dashboard-accent1/20 hover:bg-dashboard-accent1/10'
+                }`}
               >
                 <Banknote className="w-4 h-4 mr-2" />
                 Cash
@@ -149,7 +154,11 @@ const PaymentDialog = ({ isOpen, onClose, memberId, memberNumber, memberName, co
                 type="button"
                 variant={paymentMethod === 'bank_transfer' ? 'default' : 'outline'}
                 onClick={() => setPaymentMethod('bank_transfer')}
-                className="flex-1"
+                className={`flex-1 ${
+                  paymentMethod === 'bank_transfer' 
+                    ? 'bg-dashboard-accent1 hover:bg-dashboard-accent1/80' 
+                    : 'border-dashboard-accent1/20 hover:bg-dashboard-accent1/10'
+                }`}
               >
                 <CreditCard className="w-4 h-4 mr-2" />
                 Bank Transfer
@@ -158,7 +167,7 @@ const PaymentDialog = ({ isOpen, onClose, memberId, memberNumber, memberName, co
           </div>
           
           <Button 
-            className="w-full"
+            className="w-full bg-dashboard-accent2 hover:bg-dashboard-accent2/80 text-white"
             onClick={handlePaymentSubmit}
             disabled={!paymentAmount || createPaymentRequest.isPending}
           >
