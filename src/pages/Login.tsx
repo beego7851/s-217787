@@ -1,51 +1,37 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { LoginTabs } from "../components/auth/LoginTabs";
-import { useToast } from "../hooks/use-toast";
-import { handleMemberIdLogin } from "../components/auth/LoginHandlers";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LoginForm from '@/components/auth/LoginForm';
+import CommitteeUpdate from '@/components/auth/CommitteeUpdate';
+import MembershipExpectations from '@/components/auth/MembershipExpectations';
+import ImportantInformation from '@/components/auth/ImportantInformation';
+import MedicalExaminer from '@/components/auth/MedicalExaminer';
 
-export default function Login() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleMemberIdSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    const formData = new FormData(e.currentTarget);
-    const memberId = formData.get('memberId') as string;
-    const password = formData.get('password') as string;
-    
-    try {
-      console.log("Attempting member ID login with:", { memberId });
-      await handleMemberIdLogin(memberId, password, navigate);
-    } catch (error) {
-      console.error("Member ID login error:", error);
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid member ID or password",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+const Login = () => {
   return (
-    <div className="container max-w-lg mx-auto py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LoginTabs 
-            onMemberIdSubmit={handleMemberIdSubmit}
-            isLoading={isLoading}
-          />
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-dashboard-dark">
+      <div className="w-full bg-dashboard-card/50 py-4 text-center border-b border-white/10">
+        <p className="text-xl text-white font-arabic">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+        <p className="text-sm text-dashboard-text mt-1">In the name of Allah, the Most Gracious, the Most Merciful</p>
+      </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-white mb-4">Pakistan Welfare Association</h1>
+            <p className="text-dashboard-text text-lg">Welcome to our community platform. Please login with your member number.</p>
+          </div>
+
+          <LoginForm />
+          <CommitteeUpdate />
+          <MembershipExpectations />
+          <ImportantInformation />
+          <MedicalExaminer />
+
+          <footer className="text-center text-dashboard-muted text-sm py-8">
+            <p>© 2024 SmartFIX Tech, Burton Upon Trent. All rights reserved.</p>
+            <p className="mt-2">Website created and coded by Zaheer Asghar</p>
+          </footer>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default Login;
