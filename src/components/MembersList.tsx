@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { CreditCard, Cash } from "lucide-react";
+import { CreditCard, Banknote } from "lucide-react";
 import CollectorPaymentSummary from './CollectorPaymentSummary';
+import { Member } from '@/types/member';
 
 interface MembersListProps {
   searchTerm: string;
@@ -289,7 +290,7 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
                                 onClick={() => setPaymentMethod('cash')}
                                 className="flex-1"
                               >
-                                <Cash className="w-4 h-4 mr-2" />
+                                <Banknote className="w-4 h-4 mr-2" />
                                 Cash
                               </Button>
                               <Button
