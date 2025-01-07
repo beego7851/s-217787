@@ -40,8 +40,19 @@ function App() {
       if (_event === 'SIGNED_OUT') {
         console.log('User signed out, clearing session and queries');
         await handleSignOut();
-        window.location.href = '/login'; // Force a full page reload and redirect
         return; // Exit early to prevent further state updates
+      }
+
+      // Handle token refresh errors
+      if (_event === 'TOKEN_REFRESH_FAILED') {
+        console.error('Token refresh failed');
+        await handleSignOut();
+        toast({
+          title: "Session expired",
+          description: "Please sign in again",
+          variant: "destructive",
+        });
+        return;
       }
 
       setSession(session);
@@ -62,8 +73,10 @@ function App() {
     console.error('Auth error:', error);
     
     if (error.message?.includes('refresh_token_not_found') || 
-        error.message?.includes('Invalid Refresh Token')) {
-      console.log('Invalid refresh token, signing out...');
+        error.message?.includes('Invalid Refresh Token') ||
+        error.message?.includes('Token expired') ||
+        error.message?.includes('JWT expired')) {
+      console.log('Invalid or expired token, signing out...');
       await handleSignOut();
       
       toast({
@@ -79,6 +92,7 @@ function App() {
       setSession(null); // Clear session state immediately
       await queryClient.resetQueries(); // Reset all queries
       await supabase.auth.signOut(); // Sign out from Supabase
+      window.location.href = '/login'; // Force a full page reload and redirect
       console.log('Sign out complete, queries reset');
     } catch (error) {
       console.error('Error during sign out:', error);

@@ -261,6 +261,36 @@ export type Database = {
         }
         Relationships: []
       }
+      monitoring_logs: {
+        Row: {
+          details: Json | null
+          event_type: Database["public"]["Enums"]["monitoring_event_type"]
+          id: string
+          metric_name: string
+          metric_value: number
+          severity: Database["public"]["Enums"]["severity_level"] | null
+          timestamp: string | null
+        }
+        Insert: {
+          details?: Json | null
+          event_type: Database["public"]["Enums"]["monitoring_event_type"]
+          id?: string
+          metric_name: string
+          metric_value: number
+          severity?: Database["public"]["Enums"]["severity_level"] | null
+          timestamp?: string | null
+        }
+        Update: {
+          details?: Json | null
+          event_type?: Database["public"]["Enums"]["monitoring_event_type"]
+          id?: string
+          metric_name?: string
+          metric_value?: number
+          severity?: Database["public"]["Enums"]["severity_level"] | null
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
       payment_requests: {
         Row: {
           amount: number
@@ -363,6 +393,24 @@ export type Database = {
         }
         Returns: string
       }
+      audit_security_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          status: string
+          details: Json
+        }[]
+      }
+      check_member_numbers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          issue_type: string
+          description: string
+          affected_table: string
+          member_number: string
+          details: Json
+        }[]
+      }
       generate_full_backup: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -389,6 +437,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_user: {
+        Args: {
+          user_uid: string
+        }
+        Returns: boolean
+      }
       is_payment_overdue: {
         Args: {
           due_date: string
@@ -409,11 +463,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      validate_user_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          status: string
+          details: Json
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "collector" | "member"
       audit_operation: "create" | "update" | "delete"
       backup_operation_type: "backup" | "restore"
+      monitoring_event_type:
+        | "system_performance"
+        | "api_latency"
+        | "error_rate"
+        | "user_activity"
+        | "resource_usage"
       payment_method: "bank_transfer" | "cash"
       severity_level: "info" | "warning" | "error" | "critical"
     }
