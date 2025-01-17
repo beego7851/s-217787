@@ -5,7 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useRoleSync } from "@/hooks/useRoleSync";
-import { Loader2 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading/LoadingSpinner";
 import MainLayout from "@/components/layout/MainLayout";
 import DashboardView from "@/components/DashboardView";
 import MembersList from "@/components/MembersList";
@@ -23,7 +23,7 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
   const { syncRoles } = useRoleSync();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isInitialRoleLoad, setIsInitialRoleLoad] = useState(true);
 
   useEffect(() => {
     console.log('ProtectedRoutes mounted, session:', !!session);
@@ -31,7 +31,7 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
     const handleAuthChange = async (event: string, currentSession: Session | null) => {
       console.log('Auth state change in protected routes:', event);
       
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !currentSession) {
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !currentSession)) {
         console.log('User signed out or token refresh failed, redirecting to login');
         navigate('/login', { replace: true });
         return;
@@ -57,25 +57,27 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
     };
   }, [navigate, hasRole, toast]);
 
-  // Update isInitialLoad when role loading completes
+  // Update isInitialRoleLoad when role loading completes
   useEffect(() => {
     if (!roleLoading) {
-      console.log('Role loading completed, setting isInitialLoad to false');
-      setIsInitialLoad(false);
+      console.log('Role loading completed, setting isInitialRoleLoad to false');
+      setIsInitialRoleLoad(false);
     }
   }, [roleLoading]);
 
   // Only show loading during initial role fetch or when no session exists
-  if (isInitialLoad && (!session || roleLoading)) {
+  const showLoading = isInitialRoleLoad || (!session && roleLoading);
+
+  if (showLoading) {
     console.log('Showing loading state:', {
-      isInitialLoad,
+      isInitialRoleLoad,
       roleLoading,
       hasSession: !!session,
       timestamp: new Date().toISOString()
     });
     return (
       <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
-        <Loader2 className="w-8 h-8 animate-spin text-dashboard-accent1" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
