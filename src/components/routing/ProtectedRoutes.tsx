@@ -65,8 +65,16 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
     }
   }, [roleLoading]);
 
-  // Only show loading during initial role fetch or when no session exists
-  const showLoading = isInitialRoleLoad || (!session && roleLoading);
+  // First, check if there's no session
+  if (!session) {
+    console.log('No session in ProtectedRoutes, redirecting to login');
+    navigate('/login', { replace: true });
+    return null;
+  }
+
+  // Then, check if we need to show loading state
+  // Only show loading during initial role fetch when there IS a session
+  const showLoading = isInitialRoleLoad && roleLoading;
 
   if (showLoading) {
     console.log('Showing loading state:', {
@@ -80,12 +88,6 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
         <LoadingSpinner size="lg" />
       </div>
     );
-  }
-
-  if (!session) {
-    console.log('No session in ProtectedRoutes, redirecting to login');
-    navigate('/login', { replace: true });
-    return null;
   }
 
   console.log('Rendering protected content with role:', userRole);
