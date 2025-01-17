@@ -23,7 +23,6 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
   const { syncRoles } = useRoleSync();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isInitialRoleLoad, setIsInitialRoleLoad] = useState(true);
 
   useEffect(() => {
     console.log('ProtectedRoutes mounted, session:', !!session);
@@ -57,14 +56,6 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
     };
   }, [navigate, hasRole, toast]);
 
-  // Update isInitialRoleLoad when role loading completes
-  useEffect(() => {
-    if (!roleLoading) {
-      console.log('Role loading completed, setting isInitialRoleLoad to false');
-      setIsInitialRoleLoad(false);
-    }
-  }, [roleLoading]);
-
   // First, check if there's no session
   if (!session) {
     console.log('No session in ProtectedRoutes, redirecting to login');
@@ -74,11 +65,10 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
 
   // Then, check if we need to show loading state
   // Only show loading during initial role fetch when there IS a session
-  const showLoading = isInitialRoleLoad && roleLoading;
+  const showLoading = roleLoading && session;
 
   if (showLoading) {
     console.log('Showing loading state:', {
-      isInitialRoleLoad,
       roleLoading,
       hasSession: !!session,
       timestamp: new Date().toISOString()
