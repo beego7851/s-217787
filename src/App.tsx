@@ -18,7 +18,7 @@ const AppContent = () => {
     timestamp: new Date().toISOString()
   });
 
-  // Only show loading during initial session check
+  // Show loading only during initial session check
   if (sessionLoading && !session) {
     return <LoadingOverlay message="Initializing application..." />;
   }

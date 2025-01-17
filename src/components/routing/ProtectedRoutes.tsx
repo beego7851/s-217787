@@ -23,17 +23,21 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
   const { syncRoles } = useRoleSync();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isInitialRoleLoad, setIsInitialRoleLoad] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     console.log('ProtectedRoutes mounted, session:', !!session);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+    
+    const handleAuthChange = async (event: string, currentSession: Session | null) => {
       console.log('Auth state change in protected routes:', event);
       
-      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !currentSession)) {
+      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !currentSession) {
         console.log('User signed out or token refresh failed, redirecting to login');
         navigate('/login', { replace: true });
-      } else if (event === 'SIGNED_IN' && currentSession) {
+        return;
+      }
+
+      if (event === 'SIGNED_IN' && currentSession) {
         console.log('User signed in, checking role access');
         if (!hasRole('member')) {
           toast({
@@ -44,27 +48,27 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
           navigate('/login', { replace: true });
         }
       }
-    });
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate, hasRole, toast]);
 
-  // Update isInitialRoleLoad when role loading completes
+  // Update isInitialLoad when role loading completes
   useEffect(() => {
     if (!roleLoading) {
-      console.log('Role loading completed, setting isInitialRoleLoad to false');
-      setIsInitialRoleLoad(false);
+      console.log('Role loading completed, setting isInitialLoad to false');
+      setIsInitialLoad(false);
     }
   }, [roleLoading]);
 
   // Only show loading during initial role fetch or when no session exists
-  const showLoading = isInitialRoleLoad && (!session || roleLoading);
-  
-  if (showLoading) {
+  if (isInitialLoad && (!session || roleLoading)) {
     console.log('Showing loading state:', {
-      isInitialRoleLoad,
+      isInitialLoad,
       roleLoading,
       hasSession: !!session,
       timestamp: new Date().toISOString()
