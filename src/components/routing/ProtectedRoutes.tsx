@@ -14,20 +14,26 @@ import SystemToolsView from "@/components/SystemToolsView";
 
 interface ProtectedRoutesProps {
   session: Session | null;
+  rolesLoaded: boolean;
 }
 
-const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
+const ProtectedRoutes = ({ session, rolesLoaded }: ProtectedRoutesProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { roleLoading, hasRole, userRole } = useRoleAccess();
+  const { hasRole, userRole } = useRoleAccess();
   const { syncRoles } = useRoleSync();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    console.log('ProtectedRoutes mounted, session:', !!session);
+    console.log('ProtectedRoutes state:', {
+      hasSession: !!session,
+      rolesLoaded,
+      userRole,
+      timestamp: new Date().toISOString()
+    });
     
-    const handleAuthChange = async (event: string, currentSession: Session | null) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log('Auth state change in protected routes:', event);
       
       if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !currentSession)) {
@@ -47,14 +53,12 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
           navigate('/login', { replace: true });
         }
       }
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+    });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, hasRole, toast]);
+  }, [navigate, hasRole, toast, session, rolesLoaded, userRole]);
 
   // First, check if there's no session
   if (!session) {
@@ -63,16 +67,9 @@ const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
     return null;
   }
 
-  // Then, check if we need to show loading state
-  // Only show loading during initial role fetch when there IS a session
-  const showLoading = roleLoading && session;
-
-  if (showLoading) {
-    console.log('Showing loading state:', {
-      roleLoading,
-      hasSession: !!session,
-      timestamp: new Date().toISOString()
-    });
+  // Then, check if roles are still loading
+  if (!rolesLoaded) {
+    console.log('Roles not yet loaded in ProtectedRoutes');
     return (
       <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
         <LoadingSpinner size="lg" />

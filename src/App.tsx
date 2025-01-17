@@ -9,12 +9,13 @@ import { useUnifiedRoles } from '@/hooks/useUnifiedRoles';
 
 const AppContent = () => {
   const { session, loading: sessionLoading } = useAuth();
-  const { isLoading: rolesLoading } = useUnifiedRoles(session?.user?.id);
+  const { isLoading: rolesLoading, data: roles } = useUnifiedRoles(session?.user?.id);
 
   console.log('App render state:', {
     hasSession: !!session,
     sessionLoading,
     rolesLoading,
+    hasRoles: !!roles,
     timestamp: new Date().toISOString()
   });
 
@@ -23,17 +24,17 @@ const AppContent = () => {
     return <LoadingOverlay message="Initializing application..." />;
   }
 
-  // Don't show loading for role checks if we already have a session
-  if (!sessionLoading && session && rolesLoading) {
+  // Don't show loading for role checks if we already have a session and roles
+  if (!sessionLoading && session && rolesLoading && !roles) {
     console.log('Session exists but roles still loading');
-    return null;
+    return <LoadingOverlay message="Loading user permissions..." />;
   }
 
   return (
     <>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/*" element={<ProtectedRoutes session={session} />} />
+        <Route path="/*" element={<ProtectedRoutes session={session} rolesLoaded={!rolesLoading && !!roles} />} />
       </Routes>
       <Toaster />
     </>
