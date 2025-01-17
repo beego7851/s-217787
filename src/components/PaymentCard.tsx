@@ -1,78 +1,125 @@
-import { Card } from "@/components/ui/card";
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+import React from 'react';
+import { Card } from './ui/card';
+import { Progress } from './ui/progress';
+import { PaymentDueDate } from './financials/payment-card/PaymentDueDate';
+import { is_payment_overdue } from '@/lib/utils';
 
 interface PaymentCardProps {
-  annualPaymentStatus?: 'completed' | 'pending';
-  emergencyCollectionStatus?: 'completed' | 'pending';
-  emergencyCollectionAmount?: number;
+  annualPaymentStatus: 'pending' | 'completed';
+  emergencyCollectionStatus: 'pending' | 'completed';
+  emergencyCollectionAmount: number;
+  annualPaymentDueDate?: string;
+  emergencyCollectionDueDate?: string;
+  lastAnnualPaymentDate?: string;
+  lastEmergencyPaymentDate?: string;
+  lastAnnualPaymentAmount?: number;
+  lastEmergencyPaymentAmount?: number;
+  memberNumber: string;
 }
 
-const PaymentCard = ({ 
-  annualPaymentStatus = 'pending',
-  emergencyCollectionStatus = 'pending',
-  emergencyCollectionAmount = 0
-}: PaymentCardProps) => {
-  return (
-    <Card className="dashboard-card">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Annual Payment Section */}
-        <div className="p-6 glass-card rounded-lg">
-          <h3 className="text-lg font-medium text-white mb-4">Annual Payment</h3>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-2xl font-bold text-white">£40</p>
-              <p className="text-sm text-dashboard-muted">Due: Jan 1st, 2025</p>
-            </div>
-            <div className="w-16 h-16">
-              <CircularProgressbar
-                value={annualPaymentStatus === 'completed' ? 100 : 0}
-                text={annualPaymentStatus === 'completed' ? '✓' : '!'}
-                styles={buildStyles({
-                  textSize: '2rem',
-                  pathColor: annualPaymentStatus === 'completed' ? '#4CAF50' : '#FFA726',
-                  textColor: annualPaymentStatus === 'completed' ? '#4CAF50' : '#FFA726',
-                  trailColor: 'rgba(255,255,255,0.1)',
-                })}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-dashboard-text">
-            {annualPaymentStatus === 'completed' 
-              ? 'Payment completed' 
-              : 'Payment pending'}
-          </div>
-        </div>
+const PaymentCard: React.FC<PaymentCardProps> = ({
+  annualPaymentStatus,
+  emergencyCollectionStatus,
+  emergencyCollectionAmount,
+  annualPaymentDueDate,
+  emergencyCollectionDueDate,
+  lastAnnualPaymentDate,
+  lastEmergencyPaymentDate,
+  lastAnnualPaymentAmount,
+  lastEmergencyPaymentAmount,
+  memberNumber
+}) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP'
+    }).format(amount);
+  };
 
-        {/* Emergency Collection Section */}
-        <div className="p-6 glass-card rounded-lg">
-          <h3 className="text-lg font-medium text-white mb-4">Emergency Collection</h3>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-2xl font-bold text-white">
-                £{emergencyCollectionAmount}
-              </p>
-              <p className="text-sm text-dashboard-muted">One-time payment</p>
-            </div>
-            <div className="w-16 h-16">
-              <CircularProgressbar
-                value={emergencyCollectionStatus === 'completed' ? 100 : 0}
-                text={emergencyCollectionStatus === 'completed' ? '✓' : '!'}
-                styles={buildStyles({
-                  textSize: '2rem',
-                  pathColor: emergencyCollectionStatus === 'completed' ? '#4CAF50' : '#FFA726',
-                  textColor: emergencyCollectionStatus === 'completed' ? '#4CAF50' : '#FFA726',
-                  trailColor: 'rgba(255,255,255,0.1)',
-                })}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-dashboard-text">
-            {emergencyCollectionStatus === 'completed' 
-              ? 'Payment completed' 
-              : 'Payment pending'}
-          </div>
-        </div>
+  const getAnnualPaymentStatusInfo = () => {
+    if (annualPaymentStatus === 'completed') {
+      return {
+        message: 'Annual Payment Completed',
+        isOverdue: false,
+        isPaid: true
+      };
+    }
+    
+    if (annualPaymentDueDate) {
+      const isOverdue = is_payment_overdue(new Date(annualPaymentDueDate));
+      return {
+        message: isOverdue ? 'Annual Payment Overdue!' : 'Annual Payment Due',
+        isOverdue,
+        isPaid: false
+      };
+    }
+    
+    return null;
+  };
+
+  const getEmergencyPaymentStatusInfo = () => {
+    if (emergencyCollectionStatus === 'completed') {
+      return {
+        message: 'Emergency Payment Completed',
+        isOverdue: false,
+        isPaid: true
+      };
+    }
+    
+    if (emergencyCollectionDueDate) {
+      const isOverdue = is_payment_overdue(new Date(emergencyCollectionDueDate));
+      return {
+        message: isOverdue ? 'Emergency Payment Overdue!' : 'Emergency Payment Due',
+        isOverdue,
+        isPaid: false
+      };
+    }
+    
+    return null;
+  };
+
+  return (
+    <Card className="p-4 space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold">Annual Payment</h3>
+        <Progress 
+          value={annualPaymentStatus === 'completed' ? 100 : 0} 
+          className="mt-2"
+        />
+        <p className="mt-1 text-sm">
+          Status: {annualPaymentStatus}
+        </p>
+        {lastAnnualPaymentAmount && (
+          <p className="text-sm">
+            Last Payment: {formatCurrency(lastAnnualPaymentAmount)}
+          </p>
+        )}
+        <PaymentDueDate
+          dueDate={annualPaymentDueDate}
+          color="text-dashboard-text"
+          statusInfo={getAnnualPaymentStatusInfo()}
+        />
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold">Emergency Collection</h3>
+        <Progress 
+          value={emergencyCollectionStatus === 'completed' ? 100 : 0}
+          className="mt-2"
+        />
+        <p className="mt-1 text-sm">
+          Status: {emergencyCollectionStatus}
+        </p>
+        {lastEmergencyPaymentAmount && (
+          <p className="text-sm">
+            Last Payment: {formatCurrency(lastEmergencyPaymentAmount)}
+          </p>
+        )}
+        <PaymentDueDate
+          dueDate={emergencyCollectionDueDate}
+          color="text-dashboard-text"
+          statusInfo={getEmergencyPaymentStatusInfo()}
+        />
       </div>
     </Card>
   );

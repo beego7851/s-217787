@@ -1,23 +1,40 @@
+import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { StrictMode } from 'react'
-import App from './App.tsx'
-import './index.css'
+import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import App from './App'
+import './index.css'
+import { AuthProvider } from '@/contexts/auth/AuthProvider'
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
+      // Optimize caching
+      staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes
+      gcTime: 1000 * 60 * 30, // Cache persists for 30 minutes (renamed from cacheTime)
+      retry: 2, // Retry failed requests twice
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnReconnect: 'always', // Always refetch on reconnect
+    },
+    mutations: {
+      retry: 2,
+      networkMode: 'always',
     },
   },
 })
 
-createRoot(document.getElementById("root")!).render(
+const container = document.getElementById('root')
+if (!container) throw new Error('Failed to find the root element')
+const root = createRoot(container)
+
+root.render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>
-);
+)

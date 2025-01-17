@@ -1,15 +1,25 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import MemberProfileCard from './MemberProfileCard';
-import MonthlyChart from './MonthlyChart';
-import PaymentCard from './PaymentCard';
-import TotalCount from './TotalCount';
-import { Users } from 'lucide-react';
+import SystemAnnouncements from './SystemAnnouncements';
+import PaymentDialog from './members/PaymentDialog';
+import PaymentHistoryTable from './PaymentHistoryTable';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 
 const DashboardView = () => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const { data: memberProfile, isError } = useQuery({
     queryKey: ['memberProfile'],
@@ -18,7 +28,6 @@ const DashboardView = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No user logged in');
 
-      // First get the member number from the user metadata
       const { data: { user } } = await supabase.auth.getUser();
       const memberNumber = user?.user_metadata?.member_number;
       
@@ -33,7 +42,6 @@ const DashboardView = () => {
         .from('members')
         .select('*');
       
-      // Use the same OR condition approach as MembersList for more flexible matching
       query = query.or(`member_number.eq.${memberNumber},auth_user_id.eq.${session.user.id}`);
       
       const { data, error } = await query.maybeSingle();
@@ -63,42 +71,49 @@ const DashboardView = () => {
   });
 
   return (
-    <>
+    <div className="w-full px-2 sm:px-0 pt-[calc(6rem+1px)] lg:pt-[calc(8rem+1px)]">
       <header className="mb-8">
-        <h1 className="text-3xl font-medium mb-2 text-white">Dashboard</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+          <h1 className="text-2xl sm:text-3xl font-medium mb-2 sm:mb-0 text-dashboard-softBlue">Dashboard</h1>
+          <div className="flex flex-col items-end">
+            <p className="text-dashboard-accent1 font-medium">
+              {format(currentTime, 'EEEE, MMMM do yyyy')}
+            </p>
+            <p className="text-dashboard-accent2 text-lg">
+              {format(currentTime, 'h:mm:ss a')}
+            </p>
+          </div>
+        </div>
         <p className="text-dashboard-text">Welcome back!</p>
       </header>
       
-      <div className="grid gap-6">
-        <MemberProfileCard memberProfile={memberProfile} />
+      <div className="grid gap-4 sm:gap-6">
+        <div className="overflow-hidden">
+          <MemberProfileCard memberProfile={memberProfile} />
+        </div>
         
-        {/* Payment Card */}
-        <PaymentCard 
-          annualPaymentStatus={(memberProfile?.yearly_payment_status || 'pending') as 'completed' | 'pending'}
-          emergencyCollectionStatus={(memberProfile?.emergency_collection_status || 'pending') as 'completed' | 'pending'}
-          emergencyCollectionAmount={memberProfile?.emergency_collection_amount}
-        />
+        <div className="overflow-hidden">
+          {memberProfile && (
+            <PaymentDialog 
+              isOpen={isPaymentDialogOpen}
+              onClose={() => setIsPaymentDialogOpen(false)}
+              memberId={memberProfile.id}
+              memberNumber={memberProfile.member_number}
+              memberName={memberProfile.full_name}
+              collectorInfo={null}
+            />
+          )}
+        </div>
 
-        {/* Payment Summary */}
-        <TotalCount 
-          items={[
-            {
-              count: 40,
-              label: "Annual Payment",
-              icon: <Users className="h-4 w-4 text-dashboard-accent1" />
-            },
-            {
-              count: memberProfile?.emergency_collection_amount || 0,
-              label: "Emergency Collection",
-              icon: <Users className="h-4 w-4 text-dashboard-accent2" />
-            }
-          ]}
-        />
+        <div className="overflow-hidden">
+          <SystemAnnouncements />
+        </div>
 
-        {/* Monthly Chart */}
-        <MonthlyChart />
+        <div className="overflow-x-auto">
+          <PaymentHistoryTable />
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
