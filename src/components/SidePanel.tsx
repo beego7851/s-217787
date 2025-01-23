@@ -133,11 +133,10 @@ const SidePanel = memo(({ currentTab, onTabChange }: SidePanelProps) => {
           </div>
         </div>
       </ScrollArea>
-      <div className="p-4 border-t border-dashboard-cardBorder">
-        <p className="text-sm text-dashboard-muted mb-4">{roleStatusText}</p>
+      <div className="p-4 border-t border-dashboard-cardBorder space-y-4">
         <Button
           variant="outline"
-          className="w-full justify-start"
+          className="w-full justify-start bg-[#9b87f5] hover:bg-[#7E69AB] text-white"
           onClick={handleLogoutClick}
         >
           Sign Out
