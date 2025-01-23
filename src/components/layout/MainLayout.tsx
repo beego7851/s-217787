@@ -1,14 +1,10 @@
 import { ReactNode } from 'react';
 import MainHeader from './MainHeader';
 import SidePanel from '@/components/SidePanel';
-import type { Database } from "@/integrations/supabase/types";
-
-type UserRole = Database['public']['Enums']['app_role'];
 
 interface MainLayoutProps {
   children: ReactNode;
   activeTab: string;
-  userRole: UserRole;
   isSidebarOpen: boolean;
   onSidebarToggle: () => void;
   onTabChange: (tab: string) => void;
@@ -17,7 +13,6 @@ interface MainLayoutProps {
 const MainLayout = ({
   children,
   activeTab,
-  userRole,
   isSidebarOpen,
   onSidebarToggle,
   onTabChange,
@@ -44,11 +39,11 @@ const MainLayout = ({
           `}
         >
           <SidePanel 
+            currentTab={activeTab}
             onTabChange={(tab) => {
               onTabChange(tab);
               onSidebarToggle();
             }}
-            userRole={userRole}
           />
         </aside>
 

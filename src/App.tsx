@@ -1,52 +1,94 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEnhancedRoleAccess } from '@/hooks/useEnhancedRoleAccess';
+import { useAuthSession } from '@/hooks/useAuthSession';
 import { Toaster } from "@/components/ui/toaster";
+import { supabase } from "@/integrations/supabase/client";
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import Login from '@/pages/Login';
+import Index from '@/pages/Index';
 import ProtectedRoutes from '@/components/routing/ProtectedRoutes';
-import { useAuth } from '@/contexts/auth/AuthContext';
-import { LoadingOverlay } from '@/components/ui/loading/LoadingOverlay';
-import ErrorBoundary from '@/components/error/ErrorBoundary';
-import { useUnifiedRoles } from '@/hooks/useUnifiedRoles';
 
-const AppContent = () => {
-  const { session, loading: sessionLoading } = useAuth();
-  const { isLoading: rolesLoading, data: roles } = useUnifiedRoles(session?.user?.id);
+function App() {
+  const { session, loading: sessionLoading } = useAuthSession();
+  const { isLoading: rolesLoading, hasRole } = useEnhancedRoleAccess();
+  const [maintenanceMode, setMaintenanceMode] = useState<{ enabled: boolean; message: string } | null>(null);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(true);
 
-  console.log('App render state:', {
-    hasSession: !!session,
+  const appState = useMemo(() => ({
     sessionLoading,
     rolesLoading,
-    hasRoles: !!roles,
+    hasSession: !!session,
+    currentPath: window.location.pathname,
     timestamp: new Date().toISOString()
-  });
+  }), [sessionLoading, rolesLoading, session]);
 
-  // Show loading only during initial session check
+  useEffect(() => {
+    console.log('App render state:', appState);
+  }, [appState]);
+
+  useEffect(() => {
+    const checkMaintenanceMode = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('maintenance_settings')
+          .select('is_enabled, message')
+          .eq('id', '00000000-0000-0000-0000-000000000001')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking maintenance mode:', error);
+          return;
+        }
+
+        setMaintenanceMode(data ? {
+          enabled: data.is_enabled,
+          message: data.message
+        } : null);
+      } catch (error) {
+        console.error('Failed to check maintenance mode:', error);
+      } finally {
+        setMaintenanceLoading(false);
+      }
+    };
+
+    checkMaintenanceMode();
+  }, []);
+
+  // Only show loading during initial session check
   if (sessionLoading && !session) {
-    return <LoadingOverlay message="Initializing application..." />;
+    return null;
   }
 
-  // Don't show loading for role checks if we already have a session and roles
-  if (!sessionLoading && session && rolesLoading && !roles) {
-    console.log('Session exists but roles still loading');
-    return <LoadingOverlay message="Loading user permissions..." />;
+  // Show maintenance mode screen for non-admin users
+  if (!maintenanceLoading && maintenanceMode?.enabled && session && !hasRole('admin')) {
+    return (
+      <div className="min-h-screen bg-dashboard-dark flex items-center justify-center p-4">
+        <Alert className="max-w-2xl w-full bg-dashboard-card border-dashboard-error/50">
+          <AlertCircle className="h-6 w-6 text-dashboard-error" />
+          <AlertTitle className="text-2xl font-semibold text-white mb-4">
+            System Maintenance
+          </AlertTitle>
+          <AlertDescription className="text-lg text-dashboard-text">
+            {maintenanceMode.message || 'The system is currently undergoing maintenance. Please try again later.'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
-    <>
+    <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/*" element={<ProtectedRoutes session={session} rolesLoaded={!rolesLoading && !!roles} />} />
+        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" replace />} />
+        <Route path="/" element={<ProtectedRoutes session={session} />}>
+          <Route index element={<Index />} />
+        </Route>
       </Routes>
       <Toaster />
-    </>
+    </Router>
   );
-};
-
-const App = () => {
-  return (
-    <ErrorBoundary>
-      <AppContent />
-    </ErrorBoundary>
-  );
-};
+}
 
 export default App;

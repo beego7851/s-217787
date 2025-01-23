@@ -5,7 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 import { useRoleSync } from "@/hooks/useRoleSync";
-import { LoadingSpinner } from "@/components/ui/loading/LoadingSpinner";
+import { Loader2 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import DashboardView from "@/components/DashboardView";
 import MembersList from "@/components/MembersList";
@@ -14,35 +14,26 @@ import SystemToolsView from "@/components/SystemToolsView";
 
 interface ProtectedRoutesProps {
   session: Session | null;
-  rolesLoaded: boolean;
 }
 
-const ProtectedRoutes = ({ session, rolesLoaded }: ProtectedRoutesProps) => {
+const ProtectedRoutes = ({ session }: ProtectedRoutesProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { hasRole, userRole } = useRoleAccess();
+  const { roleLoading, hasRole, userRole } = useRoleAccess();
   const { syncRoles } = useRoleSync();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    console.log('ProtectedRoutes state:', {
-      hasSession: !!session,
-      rolesLoaded,
-      userRole,
-      timestamp: new Date().toISOString()
-    });
-    
+    console.log('ProtectedRoutes mounted, session:', !!session);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log('Auth state change in protected routes:', event);
       
       if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !currentSession)) {
         console.log('User signed out or token refresh failed, redirecting to login');
         navigate('/login', { replace: true });
-        return;
-      }
-
-      if (event === 'SIGNED_IN' && currentSession) {
+      } else if (event === 'SIGNED_IN' && currentSession) {
         console.log('User signed in, checking role access');
         if (!hasRole('member')) {
           toast({
@@ -55,26 +46,37 @@ const ProtectedRoutes = ({ session, rolesLoaded }: ProtectedRoutesProps) => {
       }
     });
 
+    // Set initial load to false after a short delay
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 1000);
+
     return () => {
       subscription.unsubscribe();
+      clearTimeout(timer);
     };
-  }, [navigate, hasRole, toast, session, rolesLoaded, userRole]);
+  }, [navigate, hasRole, toast]);
 
-  // First, check if there's no session
+  // Only show loading during initial role check and when roles are actually loading
+  const showLoading = (isInitialLoad && roleLoading) || (!session && roleLoading);
+  
+  if (showLoading) {
+    console.log('Showing loading state:', {
+      isInitialLoad,
+      roleLoading,
+      hasSession: !!session
+    });
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
+        <Loader2 className="w-8 h-8 animate-spin text-dashboard-accent1" />
+      </div>
+    );
+  }
+
   if (!session) {
     console.log('No session in ProtectedRoutes, redirecting to login');
     navigate('/login', { replace: true });
     return null;
-  }
-
-  // Then, check if roles are still loading
-  if (!rolesLoaded) {
-    console.log('Roles not yet loaded in ProtectedRoutes');
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
   }
 
   console.log('Rendering protected content with role:', userRole);
@@ -107,7 +109,6 @@ const ProtectedRoutes = ({ session, rolesLoaded }: ProtectedRoutesProps) => {
   return (
     <MainLayout
       activeTab={activeTab}
-      userRole={userRole}
       isSidebarOpen={isSidebarOpen}
       onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       onTabChange={setActiveTab}

@@ -1,72 +1,68 @@
+import { useCallback, useMemo, memo, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Settings,
-  Wallet,
-  LogOut,
-  Loader2
-} from "lucide-react";
-import { useAuthSession } from "@/hooks/useAuthSession";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Database } from "@/integrations/supabase/types";
-
-type UserRole = Database['public']['Enums']['app_role'];
+import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useAuthSession } from "@/hooks/useAuthSession";
+import NavItem from "./navigation/NavItem";
 
 interface SidePanelProps {
+  currentTab: string;
   onTabChange: (tab: string) => void;
-  userRole?: string;
 }
 
-const SidePanel = ({ onTabChange }: SidePanelProps) => {
-  const { handleSignOut } = useAuthSession();
+const SidePanel = memo(({ currentTab, onTabChange }: SidePanelProps) => {
+  const { session, handleSignOut } = useAuthSession();
   const { userRole, userRoles, roleLoading, hasRole } = useRoleAccess();
   const { toast } = useToast();
-  
-  console.log('SidePanel render state:', {
-    userRole,
-    userRoles,
-    roleLoading
-  });
 
-  const handleLogoutClick = async () => {
-    try {
-      await handleSignOut(false);
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({
-        title: "Error signing out",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  const prevUserRoleRef = useRef(userRole);
+  const prevUserRolesRef = useRef(userRoles);
 
-  const handleTabChange = (tab: string) => {
-    if (roleLoading) {
-      toast({
-        title: "Please wait",
-        description: "Loading access permissions...",
-      });
+  const hasSession = !!session;
+
+  useEffect(() => {
+    if (!hasSession) {
+      console.log('No active session, access will be restricted');
       return;
     }
 
-    const hasAccess = shouldShowTab(tab);
-    if (hasAccess) {
-      onTabChange(tab);
-    } else {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access this section.",
-        variant: "destructive",
-      });
+    if (prevUserRoleRef.current !== userRole) {
+      console.log('SidePanel rerender: userRole changed', { old: prevUserRoleRef.current, new: userRole });
+      prevUserRoleRef.current = userRole;
     }
-  };
+    if (prevUserRolesRef.current !== userRoles) {
+      console.log('SidePanel rerender: userRoles changed', { old: prevUserRolesRef.current, new: userRoles });
+      prevUserRolesRef.current = userRoles;
+    }
+  }, [userRole, userRoles, hasSession]);
 
-  const shouldShowTab = (tab: string): boolean => {
+  const navigationItems = useMemo(() => [
+    {
+      name: 'Overview',
+      tab: 'dashboard',
+      alwaysShow: true
+    },
+    {
+      name: 'Users',
+      tab: 'users',
+      requiresRole: ['admin', 'collector'] as const
+    },
+    {
+      name: 'Financials',
+      tab: 'financials',
+      requiresRole: ['admin', 'collector'] as const
+    },
+    {
+      name: 'System',
+      tab: 'system',
+      requiresRole: ['admin'] as const
+    }
+  ], []);
+
+  const shouldShowTab = useCallback((tab: string): boolean => {
+    if (!hasSession) return tab === 'dashboard';
     if (roleLoading) return tab === 'dashboard';
     if (!userRoles || !userRole) return tab === 'dashboard';
 
@@ -82,83 +78,75 @@ const SidePanel = ({ onTabChange }: SidePanelProps) => {
       default:
         return false;
     }
-  };
+  }, [roleLoading, userRoles, userRole, hasRole, hasSession]);
 
-  const navigationItems = [
-    {
-      name: 'Overview',
-      icon: LayoutDashboard,
-      tab: 'dashboard',
-      alwaysShow: true
-    },
-    {
-      name: 'Members',
-      icon: Users,
-      tab: 'users',
-      requiresRole: ['admin', 'collector'] as UserRole[]
-    },
-    {
-      name: 'Collectors & Financials',
-      icon: Wallet,
-      tab: 'financials',
-      requiresRole: ['admin', 'collector'] as UserRole[]
-    },
-    {
-      name: 'System',
-      icon: Settings,
-      tab: 'system',
-      requiresRole: ['admin'] as UserRole[]
+  const handleLogoutClick = useCallback(async () => {
+    console.log('Logout initiated');
+    try {
+      await handleSignOut(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive"
+      });
     }
-  ];
+  }, [handleSignOut, toast]);
+
+  const roleStatusText = useMemo(() => {
+    console.log('Calculating role status text');
+    if (!hasSession) return 'Not authenticated';
+    if (roleLoading) return 'Loading access...';
+    return userRole ? `Role: ${userRole}` : 'Access restricted';
+  }, [roleLoading, userRole, hasSession]);
+
+  const visibleNavigationItems = useMemo(() => {
+    console.log('Calculating visible navigation items');
+    if (!hasSession) return navigationItems.filter(item => item.alwaysShow);
+    return navigationItems.filter(item => 
+      item.alwaysShow || (!roleLoading && item.requiresRole?.some(role => userRoles?.includes(role)))
+    );
+  }, [navigationItems, roleLoading, userRoles, hasSession]);
+
+  console.log('SidePanel render', { userRole, roleLoading, hasSession });
 
   return (
     <div className="flex flex-col h-full bg-dashboard-card border-r border-dashboard-cardBorder">
-      <div className="p-4 lg:p-6 border-b border-dashboard-cardBorder">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-          Dashboard
-          {roleLoading && <Loader2 className="h-4 w-4 animate-spin text-dashboard-accent1" />}
-        </h2>
-        <p className="text-sm text-dashboard-muted">
-          {roleLoading ? 'Loading access...' : userRole ? `Role: ${userRole}` : 'Access restricted'}
-        </p>
-      </div>
-      
-      <ScrollArea className="flex-1 px-4 lg:px-6">
-        <div className="space-y-1.5 py-4">
-          {navigationItems.map((item) => (
-            (item.alwaysShow || !roleLoading && item.requiresRole?.some(role => userRoles?.includes(role as UserRole))) && (
-              <Button
-                key={item.tab}
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start gap-2 text-sm font-medium",
-                  "hover:bg-dashboard-hover/10 hover:text-white",
-                  "transition-colors duration-200"
-                )}
-                onClick={() => handleTabChange(item.tab)}
-                disabled={roleLoading}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
-              </Button>
-            )
-          ))}
+      <ScrollArea className="flex-1">
+        <div className="space-y-4 py-4">
+          <div className="px-3 py-2">
+            <h2 className="mb-2 px-4 text-lg font-semibold text-dashboard-highlight">
+              Navigation
+            </h2>
+            <div className="space-y-1">
+              {visibleNavigationItems.map((item) => (
+                <NavItem
+                  key={item.tab}
+                  name={item.name}
+                  tab={item.tab}
+                  isActive={currentTab === item.tab}
+                  onClick={() => onTabChange(item.tab)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </ScrollArea>
-
-      <div className="p-4 lg:p-6 border-t border-dashboard-cardBorder">
+      <div className="p-4 border-t border-dashboard-cardBorder">
+        <p className="text-sm text-dashboard-muted mb-4">{roleStatusText}</p>
         <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 text-sm text-dashboard-muted hover:text-white hover:bg-dashboard-hover/10"
+          variant="outline"
+          className="w-full justify-start"
           onClick={handleLogoutClick}
-          disabled={roleLoading}
         >
-          <LogOut className="h-4 w-4" />
-          Logout
+          Sign Out
         </Button>
       </div>
     </div>
   );
-};
+});
+
+SidePanel.displayName = "SidePanel";
 
 export default SidePanel;

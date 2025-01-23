@@ -15,30 +15,17 @@ const MembersList = ({ searchTerm: initialSearchTerm, userRole }: MembersListPro
   const { data: collectorInfo } = useQuery({
     queryKey: ['collector-info'],
     queryFn: async () => {
-      if (userRole !== 'collector') {
-        console.log('Not a collector, skipping collector info fetch');
-        return null;
-      }
+      if (userRole !== 'collector') return null;
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No authenticated user found');
-        return null;
-      }
+      if (!user) return null;
 
-      console.log('Fetching collector info for member:', user.user_metadata.member_number);
-      const { data: collectorData, error } = await supabase
+      const { data: collectorData } = await supabase
         .from('members_collectors')
         .select('id, name, phone, prefix, number, email, active, created_at, updated_at')
         .eq('member_number', user.user_metadata.member_number)
-        .maybeSingle();
+        .single();
 
-      if (error) {
-        console.error('Error fetching collector info:', error);
-        throw error;
-      }
-
-      console.log('Collector info fetched:', collectorData);
       return collectorData;
     },
     enabled: userRole === 'collector',

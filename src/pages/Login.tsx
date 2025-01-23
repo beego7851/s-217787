@@ -5,7 +5,7 @@ import ImportantInformation from '@/components/auth/ImportantInformation';
 import { useAuthSession } from '@/hooks/useAuthSession';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { LoadingSpinner } from '@/components/ui/loading/LoadingSpinner';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const { session, loading } = useAuthSession();
@@ -24,17 +24,17 @@ const Login = () => {
     }
   }, [session, loading, navigate]);
 
-  // Show loading state during the initial session check
+  // Only show loading state during the initial session check
   if (loading) {
     console.log('Login page - Initial session check in progress');
     return (
       <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
-        <LoadingSpinner size="lg" />
+        <Loader2 className="w-8 h-8 animate-spin text-dashboard-accent1" />
       </div>
     );
   }
 
-  // Only show login form if there's no session and we're not loading
+  // Show login form if there's no session and we're not loading
   if (!session) {
     console.log('Login page - Showing login form (no active session)');
     return (
