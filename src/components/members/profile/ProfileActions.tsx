@@ -21,16 +21,14 @@ const ProfileActions = ({
 }: ProfileActionsProps) => {
   return (
     <div className="space-y-4">
-      {(userRole === 'collector' || userRole === 'admin' || userRole === 'member') && (
-        <Button
-          onClick={onEditClick}
-          variant="outline"
-          className="w-full border-dashboard-accent2/50 hover:bg-dashboard-accent2/10"
-        >
-          <Edit className="w-4 h-4 mr-2" />
-          Edit Profile
-        </Button>
-      )}
+      <Button
+        onClick={onEditClick}
+        variant="outline"
+        className="w-full border-dashboard-accent2/50 hover:bg-dashboard-accent2/10"
+      >
+        <Edit className="w-4 h-4 mr-2" />
+        Edit Profile
+      </Button>
       
       {userRole === 'member' && collectorInfo ? (
         <div className="space-y-4">
