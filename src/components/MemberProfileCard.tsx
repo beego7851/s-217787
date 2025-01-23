@@ -147,17 +147,13 @@ const MemberProfileCard = ({ memberProfile }: MemberProfileCardProps) => {
                   <div className="flex flex-wrap gap-2">
                     <ProfileActions 
                       userRole={userRole}
-                      onEditClick={() => setShowEditDialog(true)}
+                      onEditClick={() => {
+                        console.log("Edit button clicked, opening dialog");
+                        setShowEditDialog(true);
+                      }}
                       collectorInfo={collectorInfo}
                       memberNumber={memberProfile.member_number}
                     />
-                    <Button
-                      onClick={() => setShowPasswordDialog(true)}
-                      className="bg-dashboard-accent2 hover:bg-dashboard-accent2/80 text-white"
-                    >
-                      <Key className="w-4 h-4 mr-2" />
-                      Change Password
-                    </Button>
                   </div>
                 </div>
 
@@ -198,6 +194,13 @@ const MemberProfileCard = ({ memberProfile }: MemberProfileCardProps) => {
       <FamilyMembersSection 
         familyMembers={familyMembers || []}
         onAddFamilyMember={() => setShowAddFamilyDialog(true)}
+      />
+
+      <EditProfileDialog
+        member={memberProfile}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onProfileUpdated={handleProfileUpdated}
       />
 
       <ChangePasswordDialog
