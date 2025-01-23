@@ -19,6 +19,7 @@ const SidePanel = memo(({ currentTab, onTabChange }: SidePanelProps) => {
 
   const prevUserRoleRef = useRef(userRole);
   const prevUserRolesRef = useRef(userRoles);
+  const prevTabRef = useRef(currentTab);
 
   const hasSession = !!session;
 
@@ -36,7 +37,11 @@ const SidePanel = memo(({ currentTab, onTabChange }: SidePanelProps) => {
       console.log('SidePanel rerender: userRoles changed', { old: prevUserRolesRef.current, new: userRoles });
       prevUserRolesRef.current = userRoles;
     }
-  }, [userRole, userRoles, hasSession]);
+    if (prevTabRef.current !== currentTab) {
+      console.log('SidePanel rerender: currentTab changed', { old: prevTabRef.current, new: currentTab });
+      prevTabRef.current = currentTab;
+    }
+  }, [userRole, userRoles, hasSession, currentTab]);
 
   const navigationItems = useMemo(() => [
     {
@@ -109,6 +114,11 @@ const SidePanel = memo(({ currentTab, onTabChange }: SidePanelProps) => {
     );
   }, [navigationItems, roleLoading, userRoles, hasSession]);
 
+  const handleTabChange = useCallback((tab: string) => {
+    console.log('Tab change requested:', tab);
+    onTabChange(tab);
+  }, [onTabChange]);
+
   console.log('SidePanel render', { userRole, roleLoading, hasSession });
 
   return (
@@ -126,7 +136,7 @@ const SidePanel = memo(({ currentTab, onTabChange }: SidePanelProps) => {
                   name={item.name}
                   tab={item.tab}
                   isActive={currentTab === item.tab}
-                  onClick={() => onTabChange(item.tab)}
+                  onClick={() => handleTabChange(item.tab)}
                 />
               ))}
             </div>
