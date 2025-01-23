@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import MetricCard from '../MetricCard';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { generateMembersPDF, generateCollectorZip } from '@/utils/pdfGenerator';
 import { useToast } from "@/hooks/use-toast";
 import PDFGenerationProgress from '../PDFGenerationProgress';
+import DownloadButtons from '../print/DownloadButtons';
 
 const MemberStatsView = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -191,6 +192,10 @@ const MemberStatsView = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-white">Member Statistics</h2>
         <div className="flex gap-4">
+          <DownloadButtons 
+            members={Object.values(stats?.members.membersByCollector || {}).flat()}
+            className="flex gap-2"
+          />
           <Button
             onClick={handleGenerateAllReports}
             className="flex items-center gap-2 bg-dashboard-accent1 hover:bg-dashboard-accent1/80"
@@ -202,14 +207,6 @@ const MemberStatsView = () => {
         </div>
       </div>
 
-      {isGenerating && (
-        <PDFGenerationProgress
-          current={progress.current}
-          total={progress.total}
-          currentCollector={progress.collector}
-        />
-      )}
-      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
           title="Total Members"
