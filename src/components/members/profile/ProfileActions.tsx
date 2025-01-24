@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, PhoneCall } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import BankDetails from "../payment/BankDetails";
+import PasswordChangeSection from "@/components/auth/PasswordChangeSection";
 
 interface ProfileActionsProps {
   userRole: string;
@@ -29,6 +30,10 @@ const ProfileActions = ({
         <Edit className="w-4 h-4 mr-2" />
         Edit Profile
       </Button>
+
+      {memberNumber && (
+        <PasswordChangeSection memberNumber={memberNumber} />
+      )}
       
       {userRole === 'member' && collectorInfo ? (
         <div className="space-y-4">
